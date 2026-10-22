@@ -1,5 +1,13 @@
-/* Job board inside the manager shell: requests → queue → jobs, read left to right.
-   Scoped to .jobs-app so the legacy operations styles stay untouched. */
+/* Task Automation, laid out like a Jira backlog and board: flat panels, small
+   3px-radius controls, 32px buttons, uppercase column headers and lozenge
+   counts. Scoped to .jobs-app so the rest of the manager workspace is
+   unaffected. Touch screens keep the 44px target size at the end. */
+
+.jobs-app {
+  --jira-radius: 3px;
+  --jira-control: 32px;
+  --jira-hover: #e2e8f0;
+}
 
 .jobs-app .manager-content {
   display: grid;
@@ -11,6 +19,55 @@
   margin: 0;
 }
 
+/* ---- Compact buttons */
+.jobs-app .button {
+  min-height: var(--jira-control);
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--jira-radius);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--color-brand-navy);
+  background: var(--color-surface-subtle);
+  box-shadow: none;
+  white-space: nowrap;
+}
+
+.jobs-app .button:hover:not(:disabled) {
+  background: var(--jira-hover);
+}
+
+.jobs-app .button-primary {
+  color: var(--color-text-inverse);
+  background: var(--color-brand-orange-action);
+}
+
+.jobs-app .button-primary:hover:not(:disabled) {
+  background: var(--color-brand-orange-action-hover);
+}
+
+.jobs-app .button-dark {
+  color: var(--color-text-inverse);
+  background: var(--color-brand-navy);
+}
+
+.jobs-app .button-dark:hover:not(:disabled) {
+  background: #0f1d36;
+}
+
+.jobs-app .button:disabled {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-subtle);
+  opacity: 0.6;
+}
+
+.jobs-app .button:focus-visible {
+  outline: 2px solid var(--color-info);
+  outline-offset: 2px;
+}
+
+/* ---- Panels */
 .jobs-pipeline {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
@@ -18,13 +75,14 @@
   gap: 16px;
 }
 
-.jobs-stage {
+.jobs-stage,
+.jobs-board {
   min-width: 0;
   display: grid;
-  gap: 14px;
-  padding: 18px;
+  gap: 8px;
+  padding: 12px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--jira-radius);
   background: var(--color-surface);
 }
 
@@ -33,25 +91,33 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px 12px;
-  min-height: 44px;
+  gap: 8px 12px;
+  min-height: var(--jira-control);
 }
 
 .jobs-stage-head h2 {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   margin: 0;
   color: var(--color-brand-navy);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
-  line-height: 24px;
+  line-height: 20px;
 }
 
-.jobs-stage-head h2 span {
+/* Count lozenge, like a Jira issue count. */
+.jobs-stage-head h2 span,
+.jobs-board-column h3 span {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
   color: var(--color-text-secondary-subtle);
-  font-size: 14px;
+  background: var(--color-surface-subtle);
+  font-size: 12px;
   font-weight: 600;
+  line-height: 20px;
+  text-align: center;
   font-variant-numeric: tabular-nums;
 }
 
@@ -59,7 +125,68 @@
 .jobs-row-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px;
+}
+
+/* ---- Backlog rows */
+.jobs-app .operations-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--jira-radius);
+  overflow: hidden;
+}
+
+.jobs-app .operations-list-item {
+  min-height: 40px;
+  gap: 12px;
+  padding: 6px 8px 6px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  background: var(--color-surface);
+}
+
+.jobs-app .operations-list-item:last-child {
+  border-bottom: 0;
+}
+
+.jobs-app .operations-list-item:hover {
+  background: var(--color-surface-subtle);
+}
+
+.jobs-app .operations-list-item > div:first-child {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 10px;
+  row-gap: 1px;
+}
+
+.jobs-app .operations-list-item > div strong {
+  color: var(--color-info-text);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.jobs-app .operations-list-item > div span {
+  grid-column: 2;
+  color: var(--color-text-secondary-subtle);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: normal;
+}
+
+.jobs-app .operations-list-item > div span:first-of-type {
+  grid-column: 2;
+  grid-row: 1;
+  color: var(--color-brand-navy);
+  font-size: 13px;
+}
+
+.jobs-app .operations-list-item > div .flood-chip {
+  grid-column: 2;
 }
 
 /* Beats the legacy `.operations-list-item > div` grid rule. */
@@ -68,49 +195,29 @@
   flex: 0 0 auto;
 }
 
-.jobs-app .operations-list {
-  margin: 0;
-}
-
-.jobs-app .operations-list-item {
-  padding: 12px;
-}
-
-.jobs-app .operations-list-item > div strong {
-  font-size: 14px;
-  font-variant-numeric: tabular-nums;
-}
-
-.jobs-app .operations-list-item > div span {
-  font-size: 13px;
-  white-space: normal;
-}
-
 .jobs-empty {
   display: grid;
   justify-items: center;
-  gap: 10px;
-  padding: 24px 16px;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
+  gap: 8px;
+  padding: 20px 16px;
   text-align: center;
 }
 
 .jobs-empty-icon {
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: var(--color-brand-navy);
+  color: var(--color-text-secondary-subtle);
   background: var(--color-surface-subtle);
 }
 
 .jobs-empty p {
-  max-width: 32ch;
+  max-width: 36ch;
   margin: 0;
   color: var(--color-text-secondary-subtle);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 20px;
   text-wrap: pretty;
 }
@@ -120,10 +227,14 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
-  border-radius: 999px;
+  padding: 0 6px;
+  border-radius: var(--jira-radius);
   color: var(--color-text-secondary);
   background: var(--color-surface-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-transform: uppercase;
 }
 
 .jobs-app .jobs-status::before {
@@ -150,62 +261,12 @@
   background: var(--color-success-surface);
 }
 
-@media (max-width: 900px) {
-  .jobs-board-columns {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .jobs-pipeline {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .jobs-app .operations-list-item {
-    flex-wrap: wrap;
-  }
-
-  .jobs-app .operations-list-item > .jobs-row-actions {
-    flex-basis: 100%;
-  }
-
-  .jobs-row-actions .button {
-    flex: 1;
-  }
-}
-
-@media (max-width: 640px) {
-  .jobs-stage {
-    padding: 14px;
-  }
-
-  .jobs-actions {
-    width: 100%;
-  }
-
-  .jobs-actions .button {
-    flex: 1;
-  }
-}
-
-/* Task status board */
-.jobs-board {
-  display: grid;
-  gap: 14px;
-  padding: 18px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-}
-
+/* ---- Board */
 .jobs-board-columns {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-@media (max-width: 1279px) {
-  .jobs-board-columns {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  gap: 8px;
+  align-items: start;
 }
 
 .jobs-board-column {
@@ -213,8 +274,8 @@
   display: grid;
   align-content: start;
   gap: 8px;
-  padding: 10px;
-  border-radius: var(--radius-md);
+  padding: 8px;
+  border-radius: var(--jira-radius);
   background: var(--color-surface-subtle);
 }
 
@@ -222,24 +283,21 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 0 2px;
-  color: var(--color-brand-navy);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.jobs-board-column h3::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--col-color, var(--color-text-secondary-subtle));
-}
-
-.jobs-board-column h3 span {
-  margin-left: auto;
+  margin: 0;
+  padding: 2px 4px;
   color: var(--color-text-secondary-subtle);
-  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 20px;
+  text-transform: uppercase;
+}
+
+/* The count sits right after the title, as in Jira. */
+.jobs-board-column h3 span {
+  background: transparent;
+  padding: 0;
+  min-width: 0;
 }
 
 .jobs-board-column[data-status="open"] {
@@ -260,7 +318,7 @@
 
 .jobs-board-column ul {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -268,21 +326,44 @@
 
 .task-card {
   display: grid;
-  gap: 3px;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: var(--jira-radius);
   background: var(--color-surface);
+  box-shadow:
+    0 1px 1px rgb(9 30 66 / 0.25),
+    0 0 1px rgb(9 30 66 / 0.31);
+}
+
+.task-card:hover {
+  background: #f8fafc;
 }
 
 .task-card strong {
   color: var(--color-brand-navy);
   font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
 }
 
 .task-card span {
   color: var(--color-text-secondary-subtle);
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.task-card span:first-of-type {
+  color: var(--color-brand-navy);
+}
+
+/* A coloured top status marker replaces the old dot in the column header. */
+.task-card::before {
+  content: "";
+  width: 28px;
+  height: 4px;
+  margin-bottom: 4px;
+  border-radius: 2px;
+  background: var(--col-color, var(--color-text-secondary-subtle));
 }
 
 .task-card .button {
@@ -292,7 +373,51 @@
 
 .jobs-board-empty {
   margin: 0;
-  padding: 10px 4px;
+  padding: 8px 4px;
   color: var(--color-text-secondary-subtle);
-  font-size: 13px;
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 1279px) {
+  .jobs-board-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .jobs-board-columns,
+  .jobs-pipeline {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .jobs-app .operations-list-item {
+    flex-wrap: wrap;
+  }
+
+  .jobs-app .operations-list-item > .jobs-row-actions {
+    flex-basis: 100%;
+  }
+}
+
+/* Touch screens: still compact, but never below a comfortable tap size. */
+@media (pointer: coarse) {
+  .jobs-app {
+    --jira-control: 44px;
+  }
+
+  .jobs-app .jobs-row-actions .button {
+    flex: 1;
+  }
+}
+
+/* Flood watch matches the flat Jira panels above. */
+.jobs-app .flood-watch {
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--jira-radius);
+}
+
+.jobs-app .flood-watch-head h2 {
+  font-size: 14px;
 }
