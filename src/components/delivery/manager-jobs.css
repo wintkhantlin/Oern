@@ -1,12 +1,17 @@
-/* Task Automation, laid out like a Jira backlog and board: flat panels, small
-   3px-radius controls, 32px buttons, uppercase column headers and lozenge
-   counts. Scoped to .jobs-app so the rest of the manager workspace is
-   unaffected. Touch screens keep the 44px target size at the end. */
+/* Task Automation in the AWS console style: square 2px corners, white
+   containers with a grey header band, 28px buttons with a 1px outline, and
+   dense table-like rows. Scoped to .jobs-app so the rest of the manager
+   workspace is unaffected. */
 
 .jobs-app {
-  --jira-radius: 3px;
-  --jira-control: 32px;
-  --jira-hover: #e2e8f0;
+  --jira-radius: 2px;
+  --jira-control: 28px;
+  --jira-hover: #fafafa;
+  --aws-line: #d5dbdb;
+  --aws-head: #fafafa;
+  --aws-ink: #232f3e;
+  --aws-text: #16191f;
+  --aws-muted: #5f6b7a;
 }
 
 .jobs-app .manager-content {
@@ -22,44 +27,53 @@
 /* ---- Compact buttons */
 .jobs-app .button {
   min-height: var(--jira-control);
-  padding: 0 12px;
-  border: 0;
+  padding: 0 14px;
+  border: 1px solid var(--aws-muted);
   border-radius: var(--jira-radius);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
   line-height: 20px;
-  color: var(--color-brand-navy);
-  background: var(--color-surface-subtle);
+  color: var(--aws-muted);
+  background: var(--color-surface);
   box-shadow: none;
   white-space: nowrap;
 }
 
 .jobs-app .button:hover:not(:disabled) {
+  color: var(--aws-text);
+  border-color: var(--aws-text);
   background: var(--jira-hover);
 }
 
 .jobs-app .button-primary {
   color: var(--color-text-inverse);
+  border-color: var(--color-brand-orange-action);
   background: var(--color-brand-orange-action);
 }
 
 .jobs-app .button-primary:hover:not(:disabled) {
+  color: var(--color-text-inverse);
+  border-color: var(--color-brand-orange-action-hover);
   background: var(--color-brand-orange-action-hover);
 }
 
 .jobs-app .button-dark {
   color: var(--color-text-inverse);
-  background: var(--color-brand-navy);
+  border-color: var(--aws-ink);
+  background: var(--aws-ink);
 }
 
 .jobs-app .button-dark:hover:not(:disabled) {
-  background: #0f1d36;
+  color: var(--color-text-inverse);
+  border-color: #000;
+  background: #000;
 }
 
 .jobs-app .button:disabled {
-  color: var(--color-text-secondary);
-  background: var(--color-surface-subtle);
-  opacity: 0.6;
+  color: #9ba7b6;
+  border-color: var(--aws-line);
+  background: var(--color-surface);
+  opacity: 1;
 }
 
 .jobs-app .button:focus-visible {
@@ -79,11 +93,12 @@
 .jobs-board {
   min-width: 0;
   display: grid;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--color-border);
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--aws-line);
   border-radius: var(--jira-radius);
   background: var(--color-surface);
+  overflow: hidden;
 }
 
 .jobs-stage-head {
@@ -92,7 +107,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px 12px;
-  min-height: var(--jira-control);
+  min-height: 44px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--aws-line);
+  background: var(--aws-head);
 }
 
 .jobs-stage-head h2 {
@@ -100,32 +118,37 @@
   align-items: center;
   gap: 8px;
   margin: 0;
-  color: var(--color-brand-navy);
-  font-size: 14px;
+  color: var(--aws-text);
+  font-size: 16px;
   font-weight: 700;
-  line-height: 20px;
+  line-height: 22px;
 }
 
-/* Count lozenge, like a Jira issue count. */
+/* Count in parentheses, as in AWS table headers. */
 .jobs-stage-head h2 span,
 .jobs-board-column h3 span {
-  min-width: 20px;
-  padding: 0 6px;
-  border-radius: 10px;
-  color: var(--color-text-secondary-subtle);
-  background: var(--color-surface-subtle);
-  font-size: 12px;
-  font-weight: 600;
+  color: var(--aws-muted);
+  font-size: 14px;
+  font-weight: 400;
   line-height: 20px;
-  text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+.jobs-stage-head h2 span::before,
+.jobs-board-column h3 span::before {
+  content: "(";
+}
+
+.jobs-stage-head h2 span::after,
+.jobs-board-column h3 span::after {
+  content: ")";
 }
 
 .jobs-actions,
 .jobs-row-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 8px;
 }
 
 /* ---- Backlog rows */
@@ -133,17 +156,16 @@
   display: grid;
   gap: 0;
   margin: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--jira-radius);
-  overflow: hidden;
+  border: 0;
+  border-radius: 0;
 }
 
 .jobs-app .operations-list-item {
   min-height: 40px;
   gap: 12px;
-  padding: 6px 8px 6px 12px;
+  padding: 6px 16px;
   border: 0;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid #eaeded;
   border-radius: 0;
   background: var(--color-surface);
 }
@@ -153,7 +175,7 @@
 }
 
 .jobs-app .operations-list-item:hover {
-  background: var(--color-surface-subtle);
+  background: var(--aws-head);
 }
 
 .jobs-app .operations-list-item > div:first-child {
@@ -164,9 +186,9 @@
 }
 
 .jobs-app .operations-list-item > div strong {
-  color: var(--color-info-text);
-  font-size: 13px;
-  font-weight: 600;
+  color: #0972d3;
+  font-size: 14px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
@@ -265,8 +287,9 @@
 .jobs-board-columns {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  gap: 12px;
   align-items: start;
+  padding: 12px 16px 16px;
 }
 
 .jobs-board-column {
@@ -275,8 +298,9 @@
   align-content: start;
   gap: 8px;
   padding: 8px;
+  border: 1px solid var(--aws-line);
   border-radius: var(--jira-radius);
-  background: var(--color-surface-subtle);
+  background: #f2f3f3;
 }
 
 .jobs-board-column h3 {
@@ -285,18 +309,14 @@
   gap: 8px;
   margin: 0;
   padding: 2px 4px;
-  color: var(--color-text-secondary-subtle);
-  font-size: 12px;
+  color: var(--aws-text);
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.02em;
   line-height: 20px;
-  text-transform: uppercase;
 }
 
 /* The count sits right after the title, as in Jira. */
 .jobs-board-column h3 span {
-  background: transparent;
-  padding: 0;
   min-width: 0;
 }
 
@@ -329,20 +349,18 @@
   gap: 2px;
   padding: 8px 10px;
   border-radius: var(--jira-radius);
+  border: 1px solid var(--aws-line);
   background: var(--color-surface);
-  box-shadow:
-    0 1px 1px rgb(9 30 66 / 0.25),
-    0 0 1px rgb(9 30 66 / 0.31);
 }
 
 .task-card:hover {
-  background: #f8fafc;
+  border-color: #879596;
 }
 
 .task-card strong {
   color: var(--color-brand-navy);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
   line-height: 20px;
 }
 
@@ -400,21 +418,17 @@
   }
 }
 
-/* Touch screens: still compact, but never below a comfortable tap size. */
 @media (pointer: coarse) {
-  .jobs-app {
-    --jira-control: 44px;
-  }
-
   .jobs-app .jobs-row-actions .button {
     flex: 1;
   }
 }
 
-/* Flood watch matches the flat Jira panels above. */
+/* Flood watch matches the square AWS-style containers above. */
 .jobs-app .flood-watch {
   gap: 8px;
-  padding: 12px;
+  padding: 16px;
+  border-color: var(--aws-line);
   border-radius: var(--jira-radius);
 }
 
