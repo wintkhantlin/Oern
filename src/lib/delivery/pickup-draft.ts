@@ -119,7 +119,6 @@ export function describeParcel(draft: PickupDraft) {
   return [
     head,
     draft.parcelDetails.trim(),
-    `Pickup ${draft.day.toLowerCase()}, ${draft.window.toLowerCase()}`,
     draft.notes.trim() && `Note: ${draft.notes.trim()}`,
   ]
     .filter(Boolean)
@@ -130,4 +129,35 @@ export function describeParcel(draft: PickupDraft) {
 export function isMyanmarPhone(value: string) {
   const digits = value.replace(/[\s()-]/g, "");
   return /^(\+?95|0)9\d{7,9}$/.test(digits);
+}
+
+export type PickupErrors = Partial<Record<keyof PickupDraft, string>>;
+
+export function validatePickup(
+  draft: PickupDraft,
+  step: "route" | "details" | "review",
+): PickupErrors {
+  const errors: PickupErrors = {};
+  if (step !== "details") {
+    if (!draft.pickupAddress.trim())
+      errors.pickupAddress = "Enter the pickup address.";
+    if (!draft.deliveryAddress.trim())
+      errors.deliveryAddress = "Enter the delivery address.";
+  }
+  if (step !== "route") {
+    if (!draft.recipientName.trim())
+      errors.recipientName = "Enter the recipient’s name.";
+    if (!isMyanmarPhone(draft.contactPhone))
+      errors.contactPhone =
+        "Enter a Myanmar mobile number, starting with 09 or +959.";
+    if (!isMyanmarPhone(draft.recipientPhone))
+      errors.recipientPhone =
+        "Enter a Myanmar mobile number, starting with 09 or +959.";
+    if (!draft.parcelKind && !draft.parcelDetails.trim())
+      errors.parcelDetails = "Choose a parcel type or describe what’s inside.";
+    const amount = Number(draft.codAmount);
+    if (!Number.isFinite(amount) || amount < 0)
+      errors.codAmount = "Enter a valid amount of 0 MMK or more.";
+  }
+  return errors;
 }

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 import { Icon } from "@/components/delivery/icons";
+import { customerReturnPath } from "@/lib/delivery/auth-return";
 import { createClient } from "@/lib/supabase/client";
 
 function formatSignupError(error: unknown): string {
@@ -25,6 +26,14 @@ function formatSignupError(error: unknown): string {
 
 export function SignupForm() {
   const router = useRouter();
+  const [returnPath, setReturnPath] = useState("/home");
+  useEffect(() => {
+    setReturnPath(
+      customerReturnPath(
+        new URLSearchParams(window.location.search).get("next"),
+      ),
+    );
+  }, []);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -46,7 +55,7 @@ export function SignupForm() {
         options: { data: { full_name: fullName, phone } },
       });
       if (signUpError) throw signUpError;
-      if (data.session) router.push("/home");
+      if (data.session) router.push(returnPath);
       else
         setMessage(
           "Check your inbox to confirm your email, then sign in to follow your deliveries.",
@@ -61,7 +70,7 @@ export function SignupForm() {
   return (
     <main className="auth-page auth-signup-page">
       <section className="auth-dialog auth-page-card auth-signup-card">
-        <Link className="auth-page-back" href="/welcome">
+        <Link className="auth-page-back" href={returnPath}>
           <Icon name="arrow-left" size={16} /> Back to welcome
         </Link>
         <span className="eyebrow">New customer account</span>
@@ -129,7 +138,9 @@ export function SignupForm() {
         </form>
         <div className="auth-switch">
           Already have an account?
-          <Link href="/home?signin=1">Sign in</Link>
+          <Link href={`/signin?next=${encodeURIComponent(returnPath)}`}>
+            Sign in
+          </Link>
         </div>
         <div className="auth-note">
           <Icon name="shield" size={15} /> Your orders stay private to your

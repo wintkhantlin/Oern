@@ -63,9 +63,11 @@ export function NotificationRow({
           gap: 1.5,
           px: 1.5,
           py: 1.5,
-          borderRadius: "16px",
-          bgcolor: unread ? "background.paper" : "grey.100",
-          boxShadow: unread ? 1 : 0,
+          borderRadius: 0,
+          borderBottom: 1,
+          borderColor: "divider",
+          bgcolor: unread ? "action.hover" : "transparent",
+          minHeight: 72,
         }}
       >
         <Badge
@@ -78,8 +80,8 @@ export function NotificationRow({
           <Avatar
             sx={{
               ...toneSx(high ? "warning" : "neutral"),
-              width: 40,
-              height: 40,
+              width: 32,
+              height: 32,
             }}
           >
             {notifyIcon[item.kind]}
@@ -313,7 +315,7 @@ export function NotificationsPage({
               sx={{
                 display: "grid",
                 gridTemplateColumns: "minmax(0, 1fr)",
-                gap: 1,
+                gap: 0,
               }}
             >
               {group.items.map((item) => (

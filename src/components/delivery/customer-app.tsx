@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AuthDialog } from "@/components/delivery/auth-dialog";
-import { signOut } from "@/components/delivery/common";
 import {
   CodSheet,
   CustomerHeader,
@@ -19,6 +18,7 @@ import {
   TrackingLookup,
   TrackLookupNotice,
 } from "@/components/delivery/customer-home";
+import { clearDraft } from "@/lib/delivery/pickup-draft";
 
 const ScanSheet = dynamic(
   () => import("@/components/delivery/scan-sheet").then((mod) => mod.ScanSheet),
@@ -43,7 +43,6 @@ import {
   homeSummary,
   matchOrders,
   normaliseCode,
-  pickNextParcel,
   rememberTrackingCode,
 } from "@/lib/delivery/customer-home";
 import { prioritiseOrders } from "@/lib/delivery/format";
@@ -295,8 +294,7 @@ export function CustomerApp({ view }: { view: CustomerView }) {
   );
   const trackDetailOnly = view === "track" && linkedOrder && !!selectedOrder;
   const isRootTab = view === "home" || view === "orders" || view === "profile";
-  const helpOrder =
-    view === "track" ? selectedOrder : pickNextParcel(realOrders);
+  const helpOrder = view === "track" ? selectedOrder : null;
   const firstName = workspace.profile?.full_name?.split(" ")[0];
   const header = {
     home: {
@@ -439,6 +437,7 @@ export function CustomerApp({ view }: { view: CustomerView }) {
         <>
           <OrdersPage
             orders={orders}
+            events={workspace.data.statusEvents}
             filter={orderFilter}
             onFilter={setOrderFilter}
             isAuthenticated={workspace.isAuthenticated}
@@ -455,7 +454,14 @@ export function CustomerApp({ view }: { view: CustomerView }) {
           isAuthenticated={workspace.isAuthenticated}
           unreadCount={unreadCount}
           onSignIn={() => setAuthOpen(true)}
-          onSignOut={() => void signOut()}
+          onSignOut={async () => {
+            const { error } = await createClient().auth.signOut({
+              scope: "local",
+            });
+            if (error) throw error;
+            clearDraft();
+            window.location.assign("/welcome");
+          }}
           onOpenHelp={() => setSheet("help")}
         />
       )}
@@ -474,7 +480,9 @@ export function CustomerApp({ view }: { view: CustomerView }) {
       {isRootTab && <CustomerBottomNav activeId={view} />}
       <HelpSheet
         open={sheet === "help"}
+        key={helpOrder?.id ?? "choose-order"}
         order={helpOrder}
+        orders={realOrders}
         requesterId={
           workspace.isAuthenticated ? (workspace.profile?.id ?? null) : null
         }

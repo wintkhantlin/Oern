@@ -10,7 +10,7 @@ export default defineConfig({
   reporter: [["list"]],
   use: { baseURL: `http://localhost:${port}`, trace: "retain-on-failure" },
   webServer: {
-    command: `bun run dev -- --port ${port}`,
+    command: `npm run dev -- --port ${port}`,
     url: `http://localhost:${port}/welcome`,
     reuseExistingServer: true,
     timeout: 120_000,
@@ -23,6 +23,8 @@ export default defineConfig({
     },
   },
   projects: [
+    { name: "mobile-320", use: { ...phone, viewport: { width: 320, height: 720 } } },
+    { name: "desktop-1440", use: { viewport: { width: 1440, height: 1000 } } },
     {
       name: "mobile-360",
       use: { ...phone, viewport: { width: 360, height: 640 } },

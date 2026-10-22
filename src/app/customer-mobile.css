@@ -1,0 +1,82 @@
+/* The customer experience is a single app canvas, including its fixed layers. */
+.customer-app {
+  width: min(100%, 480px);
+  min-height: 100dvh;
+  padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  box-shadow: none;
+  overflow-wrap: anywhere;
+  caret-color: var(--color-action-primary, #c2410c);
+}
+.customer-app ::selection {
+  background: #fed7aa;
+  color: #172b4d;
+}
+.customer-app :is(input, textarea) {
+  font-size: 16px;
+  scroll-margin-block: 90px 160px;
+}
+.customer-app :is(button, a) {
+  touch-action: manipulation;
+}
+.customer-app :focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+.customer-app .MuiButton-root {
+  min-height: 48px;
+}
+.customer-app .MuiChip-clickable {
+  min-height: 48px;
+}
+.customer-app .MuiTypography-root {
+  overflow-wrap: anywhere;
+}
+.customer-app .customer-disclosure {
+  margin: 16px;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+.customer-disclosure > summary {
+  min-height: 52px;
+  padding-block: 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.customer-disclosure > section {
+  margin: 0 0 16px;
+}
+.customer-disclosure > section > div {
+  background: transparent;
+  padding: 0;
+}
+.customer-pickup {
+  padding-bottom: 0;
+}
+.customer-pickup form {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 64px);
+}
+.customer-pickup .pickup-fields {
+  flex: 1;
+  padding: 16px;
+}
+.customer-pickup .pickup-dock {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+  background: var(--color-surface, #fff);
+  border-top: 1px solid var(--color-border, #e2e8f0);
+}
+.customer-pickup-map {
+  width: min(100%, 480px);
+  margin-inline: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .customer-app *,
+  .customer-app *::before,
+  .customer-app *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

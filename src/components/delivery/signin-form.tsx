@@ -1,12 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 import { Icon } from "@/components/delivery/icons";
+import { customerReturnPath } from "@/lib/delivery/auth-return";
 import { createClient } from "@/lib/supabase/client";
 
 function formatAuthError(error: unknown): string {
@@ -27,6 +28,14 @@ function formatAuthError(error: unknown): string {
 
 export function SigninForm() {
   const router = useRouter();
+  const [returnPath, setReturnPath] = useState("/home");
+  useEffect(() => {
+    setReturnPath(
+      customerReturnPath(
+        new URLSearchParams(window.location.search).get("next"),
+      ),
+    );
+  }, []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +49,7 @@ export function SigninForm() {
       const { error: signInError } =
         await createClient().auth.signInWithPassword({ email, password });
       if (signInError) throw signInError;
-      router.push("/home");
+      router.push(returnPath);
     } catch (cause) {
       setError(formatAuthError(cause));
     } finally {
@@ -51,20 +60,19 @@ export function SigninForm() {
   return (
     <main className="auth-page auth-signin-page">
       <section className="auth-dialog auth-page-card auth-signin-card">
-        <Link className="auth-page-back" href="/signup">
-          <Icon name="arrow-left" size={16} /> Back to sign up
+        <Link className="auth-page-back" href={returnPath}>
+          <Icon name="arrow-left" size={16} /> Back
         </Link>
         <span className="eyebrow">Sign in to Oern</span>
         <h1>Your parcel, in view.</h1>
         <p>Sign in to see your orders and the rider’s location after pickup.</p>
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="field-label">
-            Email address
             <TextField
               className="auth-mui-field"
               fullWidth
               variant="outlined"
-              aria-label="Email address"
+              label="Email address"
               type="email"
               autoComplete="email"
               value={email}
@@ -73,12 +81,11 @@ export function SigninForm() {
             />
           </div>
           <div className="field-label">
-            Password
             <TextField
               className="auth-mui-field"
               fullWidth
               variant="outlined"
-              aria-label="Password"
+              label="Password"
               type="password"
               autoComplete="current-password"
               value={password}

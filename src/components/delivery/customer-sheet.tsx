@@ -37,8 +37,10 @@ export function CustomerSheet({
       slotProps={{
         paper: {
           "aria-labelledby": titleId,
+          role: "dialog",
+          "aria-modal": true,
           sx: {
-            maxWidth: 430,
+            maxWidth: 480,
             mx: "auto",
             maxHeight: "88dvh",
             borderRadius: "28px 28px 0 0",
@@ -86,7 +88,7 @@ export function CustomerSheet({
           <IconButton
             onClick={onClose}
             aria-label="Close"
-            sx={{ bgcolor: "grey.100" }}
+            sx={{ bgcolor: "action.hover", width: 48, height: 48 }}
           >
             <Close />
           </IconButton>

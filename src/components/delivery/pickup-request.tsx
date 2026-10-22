@@ -1,541 +1,543 @@
 "use client";
 
-import ArrowBack from "@mui/icons-material/ArrowBack";
 import CheckCircleOutlined from "@mui/icons-material/CheckCircleOutlined";
+import LocationOnOutlined from "@mui/icons-material/LocationOnOutlined";
 import MyLocationOutlined from "@mui/icons-material/MyLocationOutlined";
-import RefreshOutlined from "@mui/icons-material/RefreshOutlined";
-import AppBar from "@mui/material/AppBar";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import OutlinedInput from "@mui/material/OutlinedInput";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
-import ToggleButton from "@mui/material/ToggleButton";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import Toolbar from "@mui/material/Toolbar";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
-import { AuthDialog } from "@/components/delivery/auth-dialog";
-import { Icon } from "@/components/delivery/icons";
-import { Loader } from "@/components/delivery/loader";
-import { useMapboxMap } from "@/components/delivery/mapbox-kit";
-import { useBackNavigation } from "@/components/delivery/use-back-navigation";
+import { CustomerHeader } from "@/components/delivery/customer-home";
 import { createCustomerPickupOrder } from "@/lib/delivery/actions";
-import type { MapPoint } from "@/lib/delivery/map-projection";
-import { hasMapbox, reverseGeocode } from "@/lib/delivery/mapbox";
-import { usePermissionRecovery } from "@/lib/delivery/use-permission-recovery";
+import { currency } from "@/lib/delivery/format";
+import { reverseGeocode } from "@/lib/delivery/mapbox";
+import {
+  clearDraft,
+  describeParcel,
+  emptyDraft,
+  isMyanmarPhone,
+  loadDraft,
+  type PickupDraft,
+  parcelKinds,
+  parcelSizes,
+  saveDraft,
+  validatePickup,
+} from "@/lib/delivery/pickup-draft";
 import { createClient } from "@/lib/supabase/client";
 
-const pickupWindows = ["Morning", "Afternoon", "Evening"] as const;
-type PickupWindow = (typeof pickupWindows)[number];
-type GpsState = "idle" | "locating" | "ready" | "denied" | "unavailable";
+type Step = "route" | "details" | "review";
+type Errors = Partial<Record<keyof PickupDraft, string>>;
 
-function FieldLabel({ children }: { children: string }) {
-  return (
-    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
-      {children}
-    </Typography>
-  );
-}
-
-/**
- * Pans a Mapbox map with a pin fixed at its centre — panning IS picking.
- * "Use my location" flies the map there instead of requiring a separate
- * drag-the-marker interaction. Without a Mapbox token there's nothing to
- * render here; the page falls back to GPS-only capture.
- */
-function MapPointPicker({
-  point,
-  onChange,
-}: {
-  point: MapPoint | null;
-  onChange: (point: MapPoint) => void;
-}) {
-  const container = useRef<HTMLDivElement>(null);
-  const mapState = useMapboxMap(container, true);
-  const map = mapState?.map ?? null;
-  const flewToInitial = useRef(false);
-
-  useEffect(() => {
-    if (!map) return;
-    const report = () => {
-      const center = map.getCenter();
-      onChange({ latitude: center.lat, longitude: center.lng });
-    };
-    map.on("moveend", report);
-    return () => {
-      map.off("moveend", report);
-    };
-  }, [map, onChange]);
-
-  useEffect(() => {
-    if (!map || !point || flewToInitial.current) return;
-    flewToInitial.current = true;
-    map.jumpTo({ center: [point.longitude, point.latitude], zoom: 16 });
-  }, [map, point]);
-
-  return (
-    <Box
-      sx={{
-        position: "relative",
-        height: 200,
-        borderRadius: "16px",
-        overflow: "hidden",
-        border: "1px solid",
-        borderColor: "divider",
-      }}
-    >
-      <Box ref={container} style={{ position: "absolute", inset: 0 }} />
-      <Box
-        aria-hidden="true"
-        sx={{
-          position: "absolute",
-          left: "50%",
-          top: "50%",
-          transform: "translate(-50%, -100%)",
-          color: "primary.main",
-          filter: "drop-shadow(0 2px 3px rgb(0 0 0 / 0.35))",
-          pointerEvents: "none",
-        }}
-      >
-        <Icon name="location" size={34} strokeWidth={2.2} />
-      </Box>
-    </Box>
-  );
-}
-
-export function PickupRequestPage({
-  step: _step,
-}: {
-  step?: "route" | "details" | string;
-} = {}) {
+export function PickupRequestPage({ step = "route" }: { step?: Step }) {
   const router = useRouter();
-  const goBack = useBackNavigation("/home");
-
-  const [point, setPoint] = useState<MapPoint | null>(null);
-  const [placeName, setPlaceName] = useState("");
-  const [address, setAddress] = useState("");
-  const [dropoff, setDropoff] = useState("");
-  const [gpsState, setGpsState] = useState<GpsState>("idle");
-  const [phone, setPhone] = useState("");
-  const [recipientName, setRecipientName] = useState("");
-  const [recipientPhone, setRecipientPhone] = useState("");
-  const [parcelDescription, setParcelDescription] = useState("");
-  const [codAmount, setCodAmount] = useState("0");
-  const [notes, setNotes] = useState("");
-  const [pickupWindow, setPickupWindow] = useState<PickupWindow>("Morning");
-  const [state, setState] = useState<"editing" | "sending" | "sent">("editing");
+  const [draft, setDraft] = useState<PickupDraft>(emptyDraft);
+  const [ready, setReady] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
   const [error, setError] = useState<string | null>(null);
-  const [authOpen, setAuthOpen] = useState(false);
-  const [trackingCode, setTrackingCode] = useState<string | null>(null);
-  const ready =
-    address.trim().length > 0 &&
-    dropoff.trim().length > 0 &&
-    recipientName.trim().length > 0 &&
-    recipientPhone.trim().length > 0 &&
-    parcelDescription.trim().length > 0;
-
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<{
+    id: string;
+    tracking_code: string;
+  } | null>(null);
+  const [gps, setGps] = useState(false);
+  const inFlight = useRef(false);
+  const draftRef = useRef(draft);
   useEffect(() => {
-    if (!point) return;
-    const controller = new AbortController();
-    reverseGeocode(point, controller.signal).then((name) => {
-      if (name) {
-        setPlaceName(name);
-        setAddress((current) => current || name);
-      }
-    });
-    return () => controller.abort();
-  }, [point]);
+    const restored = loadDraft();
+    draftRef.current = restored;
+    setDraft(restored);
+    setReady(true);
+  }, []);
+
+  function update(patch: Partial<PickupDraft>) {
+    const next = { ...draftRef.current, ...patch };
+    draftRef.current = next;
+    setDraft(next);
+    saveDraft(next);
+  }
 
   function locate() {
-    if (!("geolocation" in navigator)) {
-      setGpsState("unavailable");
+    if (!navigator.geolocation) {
+      setError(
+        "Location is unavailable. Type your pickup address or choose it on the map.",
+      );
       return;
     }
-    setGpsState("locating");
+    setGps(true);
+    setError(null);
     navigator.geolocation.getCurrentPosition(
-      (fix) => {
-        setPoint({
-          latitude: fix.coords.latitude,
-          longitude: fix.coords.longitude,
-        });
-        setGpsState("ready");
+      async ({ coords }) => {
+        const point = {
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        };
+        update({ pickupPoint: point });
+        try {
+          const address = await reverseGeocode(point);
+          if (address && !draftRef.current.pickupAddress.trim())
+            update({ pickupAddress: address });
+        } finally {
+          setGps(false);
+        }
       },
-      (error) => {
-        setGpsState(
-          error.code === error.PERMISSION_DENIED ? "denied" : "unavailable",
+      (cause) => {
+        setGps(false);
+        setError(
+          cause.code === cause.PERMISSION_DENIED
+            ? "Location permission is blocked. Allow it in browser settings and try again, or type your address."
+            : "Couldn’t locate you. Try again or type your address.",
         );
       },
-      { enableHighAccuracy: true, timeout: 15_000 },
+      { enableHighAccuracy: true, timeout: 15000 },
     );
   }
 
-  usePermissionRecovery({
-    permission: "geolocation",
-    enabled: gpsState === "denied",
-    onGranted: locate,
-  });
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!ready || state === "sending") return;
+    if (inFlight.current || result) return;
+    const invalid = validatePickup(draft, step);
+    setErrors(invalid);
     setError(null);
-    const supabase = createClient();
-    const { data } = await supabase.auth.getSession();
-    const userId = data.session?.user.id;
-    if (!userId) {
-      // Everything typed stays on the page while the person signs in.
-      setAuthOpen(true);
+    if (Object.keys(invalid).length) {
+      setError(
+        step === "review"
+          ? "Some details are missing. Edit addresses or parcel details below."
+          : "Check the highlighted fields.",
+      );
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLInputElement>('[aria-invalid="true"]')
+          ?.focus(),
+      );
       return;
     }
-    setState("sending");
+    saveDraft(draft);
+    if (step !== "review") {
+      router.push(step === "route" ? "/pickup/details" : "/pickup/review");
+      return;
+    }
+    inFlight.current = true;
+    setSending(true);
     try {
-      const result = await createCustomerPickupOrder(supabase, {
-        pickupAddress: address,
-        pickupLatitude: point?.latitude,
-        pickupLongitude: point?.longitude,
-        pickupContactPhone: phone,
-        deliveryAddress: dropoff,
-        recipientName,
-        recipientPhone,
-        parcelDescription: [parcelDescription, notes && `Pickup: ${notes}`]
-          .filter(Boolean)
-          .join(" · "),
-        codAmount: Math.max(0, Number(codAmount) || 0),
+      const supabase = createClient();
+      const { data, error: authError } = await supabase.auth.getSession();
+      if (authError) throw authError;
+      if (!data.session) {
+        router.push("/signin?next=%2Fpickup%2Freview");
+        return;
+      }
+      const created = await createCustomerPickupOrder(supabase, {
+        pickupAddress: draft.pickupAddress.trim(),
+        pickupLatitude: draft.pickupPoint?.latitude,
+        pickupLongitude: draft.pickupPoint?.longitude,
+        pickupContactPhone: draft.contactPhone.trim(),
+        deliveryAddress: draft.deliveryAddress.trim(),
+        deliveryLatitude: draft.deliveryPoint?.latitude,
+        deliveryLongitude: draft.deliveryPoint?.longitude,
+        recipientName: draft.recipientName.trim(),
+        recipientPhone: draft.recipientPhone.trim(),
+        parcelDescription: describeParcel(draft),
+        codAmount: Number(draft.codAmount || 0),
       });
-      setTrackingCode(result.tracking_code);
-      setState("sent");
+      setResult(created);
+      clearDraft();
     } catch (cause) {
-      setState("editing");
       setError(
         cause instanceof Error
           ? cause.message
-          : "We couldn’t send your request. Check your connection and try again.",
+          : "Couldn’t send your request. Your details are saved; try again.",
       );
+    } finally {
+      inFlight.current = false;
+      setSending(false);
     }
   }
 
-  return (
-    <main className="customer-app">
-      <AppBar
-        position="sticky"
-        color="inherit"
-        elevation={0}
-        sx={{
-          bgcolor: "background.default",
-          pt: "env(safe-area-inset-top)",
-          borderBottom: "1px solid",
-          borderColor: "divider",
+  const back =
+    step === "route"
+      ? "/home"
+      : step === "details"
+        ? "/pickup"
+        : "/pickup/details";
+  const title = result
+    ? "Pickup requested"
+    : step === "route"
+      ? "Pickup addresses"
+      : step === "details"
+        ? "Parcel and contacts"
+        : "Review pickup";
+  function field(
+    key:
+      | "pickupAddress"
+      | "deliveryAddress"
+      | "contactPhone"
+      | "recipientName"
+      | "recipientPhone"
+      | "parcelDetails"
+      | "codAmount"
+      | "notes",
+    label: string,
+    options: {
+      multiline?: boolean;
+      type?: string;
+      required?: boolean;
+      autoComplete?: string;
+    } = {},
+  ) {
+    return (
+      <TextField
+        key={key}
+        fullWidth
+        label={label}
+        value={draft[key]}
+        onChange={(event) =>
+          update({
+            [key]: event.target.value,
+            ...(key === "pickupAddress"
+              ? { pickupPoint: null }
+              : key === "deliveryAddress"
+                ? { deliveryPoint: null }
+                : {}),
+          })
+        }
+        error={!!errors[key]}
+        helperText={errors[key]}
+        multiline={options.multiline}
+        minRows={options.multiline ? 2 : undefined}
+        type={options.type}
+        required={options.required}
+        autoComplete={options.autoComplete}
+        slotProps={{
+          htmlInput: {
+            maxLength: key === "notes" || key === "parcelDetails" ? 1000 : 500,
+            inputMode:
+              key === "codAmount"
+                ? "decimal"
+                : options.type === "tel"
+                  ? "tel"
+                  : undefined,
+          },
         }}
-      >
-        <Toolbar disableGutters sx={{ minHeight: 72, px: 2, gap: 1 }}>
-          <IconButton
-            aria-label="Back"
-            edge="start"
-            onClick={goBack}
-            sx={{ width: 48, height: 48, color: "text.primary" }}
-          >
-            <ArrowBack />
-          </IconButton>
-          <Typography
-            variant="h5"
-            component="h1"
-            noWrap
-            sx={{ fontWeight: 750, lineHeight: "30px" }}
-          >
-            Request a pickup
-          </Typography>
-        </Toolbar>
-      </AppBar>
-
-      {state === "sent" ? (
-        <Stack
-          spacing={1.5}
-          sx={{ px: 2, pt: 4, pb: 6, alignItems: "flex-start" }}
-        >
-          <CheckCircleOutlined sx={{ fontSize: 36, color: "success.main" }} />
-          <Typography variant="h6" component="h2" sx={{ fontWeight: 750 }}>
+      />
+    );
+  }
+  return (
+    <main className="customer-app customer-pickup">
+      <CustomerHeader
+        title={title}
+        isAuthenticated={false}
+        unreadCount={0}
+        onBack={() => router.push(result ? "/home" : back)}
+      />
+      {!ready ? (
+        <Stack spacing={2} sx={{ p: 2 }} aria-label="Loading pickup draft">
+          <Skeleton height={100} />
+          <Skeleton height={100} />
+          <Skeleton height={56} />
+        </Stack>
+      ) : result ? (
+        <Stack spacing={2} sx={{ px: 2, py: 5 }}>
+          <CheckCircleOutlined color="success" sx={{ fontSize: 48 }} />
+          <Typography component="h2" variant="h5">
             Request sent
           </Typography>
-          <Typography sx={{ color: "text.secondary" }}>
-            Your order {trackingCode ? `${trackingCode} ` : ""}is now waiting
-            for assignment. We will confirm{" "}
-            {/^[aeiou]/i.test(pickupWindow) ? "an" : "a"}{" "}
-            {pickupWindow.toLowerCase()} pickup from {address.trim()} and reach
-            you at {phone.trim() || "the number on your account"}.
+          <Typography color="text.secondary">
+            Your pickup is pending. We’ll show the rider here once your delivery
+            is assigned.
+          </Typography>
+          <Typography sx={{ fontWeight: 700 }}>
+            {result.tracking_code}
           </Typography>
           <Button
-            fullWidth
+            component={Link}
+            href={
+              result.id
+                ? `/track?order=${encodeURIComponent(result.id)}`
+                : `/track?code=${encodeURIComponent(result.tracking_code)}`
+            }
             variant="contained"
-            size="large"
-            onClick={() => router.push("/home")}
-            sx={{ minHeight: 52, mt: 2 }}
           >
-            Back to home
+            View request
+          </Button>
+          <Button component={Link} href="/home">
+            Back to Home
           </Button>
         </Stack>
       ) : (
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{
-            px: 2,
-            pt: 2,
-            pb: "calc(96px + env(safe-area-inset-bottom))",
-            display: "grid",
-            gap: 2,
-          }}
-        >
-          <Box>
-            <FieldLabel>Pickup location</FieldLabel>
-            {hasMapbox && (
-              <Box sx={{ mb: 1 }}>
-                <MapPointPicker point={point} onChange={setPoint} />
-                <Typography
-                  variant="caption"
-                  sx={{ display: "block", mt: 0.5, color: "text.secondary" }}
-                >
-                  Drag the map so the pin sits on your pickup spot.
-                </Typography>
-              </Box>
-            )}
-            <Button
-              variant="outlined"
-              color="secondary"
-              onClick={locate}
-              disabled={gpsState === "locating"}
-              startIcon={
-                gpsState === "locating" ? (
-                  <Loader compact label="Finding your location…" />
-                ) : (
-                  <MyLocationOutlined fontSize="small" />
-                )
-              }
-              sx={{ mb: 1 }}
+        <form onSubmit={submit} noValidate>
+          <Stack className="pickup-fields" spacing={2.5}>
+            <Stack
+              direction="row"
+              component="ol"
+              aria-label="Pickup steps"
+              sx={{ m: 0, p: 0, listStyle: "none", gap: 1 }}
             >
-              {gpsState === "locating" ? "Finding you…" : "Use my location"}
-            </Button>
-            {gpsState === "denied" && (
-              <Box sx={{ mb: 1.5 }}>
+              {(["route", "details", "review"] as const).map((value, index) => (
                 <Typography
-                  variant="caption"
-                  sx={{ display: "block", mb: 0.5, color: "error.main" }}
-                >
-                  Location access was blocked. Allow it in your browser
-                  settings, or enter the address below:
-                </Typography>
-                <Box
-                  component="ul"
-                  sx={{
-                    m: 0,
-                    pl: 2.5,
-                    typography: "caption",
-                    color: "text.secondary",
-                  }}
-                >
-                  <li>
-                    <strong>Safari (iPhone):</strong> Tap <em>aA</em> in the
-                    address bar → Website Settings → Location → Allow.
-                  </li>
-                  <li>
-                    <strong>Chrome / Android:</strong> Tap the lock or tune icon
-                    in the address bar → Permissions → Location → Allow.
-                  </li>
-                </Box>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<RefreshOutlined />}
-                  onClick={locate}
-                  sx={{ mt: 1 }}
-                >
-                  Try again
-                </Button>
-              </Box>
-            )}
-            {gpsState === "unavailable" && (
-              <Typography
-                variant="caption"
-                sx={{ display: "block", mb: 1, color: "error.main" }}
-              >
-                GPS isn't available on this device. Enter the address below.
-              </Typography>
-            )}
-            {placeName && (
-              <Typography
-                variant="caption"
-                sx={{ display: "block", mb: 1, color: "text.secondary" }}
-              >
-                Matched: {placeName}
-              </Typography>
-            )}
-            <OutlinedInput
-              fullWidth
-              required
-              value={address}
-              onChange={(event) => setAddress(event.target.value)}
-              placeholder="House, street, township"
-              inputProps={{ "aria-label": "Pickup address" }}
-            />
-          </Box>
-
-          <Box>
-            <FieldLabel>Deliver to</FieldLabel>
-            <OutlinedInput
-              fullWidth
-              required
-              value={dropoff}
-              onChange={(event) => setDropoff(event.target.value)}
-              placeholder="Recipient’s address and township"
-              inputProps={{ "aria-label": "Delivery address" }}
-            />
-          </Box>
-
-          <Box>
-            <FieldLabel>Contact phone (optional)</FieldLabel>
-            <OutlinedInput
-              fullWidth
-              type="tel"
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
-              placeholder="09xxxxxxxxx"
-              inputProps={{ "aria-label": "Contact phone" }}
-            />
-          </Box>
-
-          <Box>
-            <FieldLabel>Recipient name</FieldLabel>
-            <OutlinedInput
-              fullWidth
-              required
-              value={recipientName}
-              onChange={(event) => setRecipientName(event.target.value)}
-              placeholder="Who should receive it?"
-              inputProps={{ "aria-label": "Recipient name" }}
-            />
-          </Box>
-
-          <Box>
-            <FieldLabel>Recipient phone</FieldLabel>
-            <OutlinedInput
-              fullWidth
-              required
-              value={recipientPhone}
-              onChange={(event) => setRecipientPhone(event.target.value)}
-              placeholder="09xxxxxxxxx"
-              inputProps={{ "aria-label": "Recipient phone" }}
-            />
-          </Box>
-
-          <Box>
-            <FieldLabel>Parcel details</FieldLabel>
-            <OutlinedInput
-              fullWidth
-              required
-              multiline
-              minRows={2}
-              value={parcelDescription}
-              onChange={(event) => setParcelDescription(event.target.value)}
-              placeholder="Documents, clothing, fragile items…"
-              inputProps={{ "aria-label": "Parcel details" }}
-            />
-          </Box>
-
-          <Box>
-            <FieldLabel>COD amount · MMK</FieldLabel>
-            <OutlinedInput
-              fullWidth
-              type="number"
-              value={codAmount}
-              onChange={(event) => setCodAmount(event.target.value)}
-              inputProps={{ min: 0, step: 1, "aria-label": "COD amount" }}
-            />
-          </Box>
-
-          <Box>
-            <FieldLabel>Preferred time</FieldLabel>
-            <ToggleButtonGroup
-              exclusive
-              fullWidth
-              value={pickupWindow}
-              onChange={(_, value: PickupWindow | null) => {
-                if (value) setPickupWindow(value);
-              }}
-              aria-label="Preferred pickup time"
-              sx={{ p: 0.5, borderRadius: "999px", bgcolor: "grey.100" }}
-            >
-              {pickupWindows.map((value) => (
-                <ToggleButton
+                  component="li"
                   key={value}
-                  value={value}
+                  aria-current={step === value ? "step" : undefined}
+                  variant="caption"
                   sx={{
-                    minHeight: 44,
-                    border: 0,
-                    borderRadius: "999px !important",
-                    "&.Mui-selected": {
-                      bgcolor: "background.paper",
-                      boxShadow: 1,
-                    },
+                    flex: 1,
+                    color: step === value ? "primary.main" : "text.secondary",
+                    fontWeight: step === value ? 700 : 400,
+                    borderBottom: 2,
+                    borderColor: step === value ? "primary.main" : "divider",
+                    pb: 1,
                   }}
                 >
-                  {value}
-                </ToggleButton>
+                  {index + 1}. {["Addresses", "Parcel", "Review"][index]}
+                </Typography>
               ))}
-            </ToggleButtonGroup>
-          </Box>
-
-          <Box>
-            <FieldLabel>What are we picking up? (optional)</FieldLabel>
-            <OutlinedInput
-              fullWidth
-              multiline
-              minRows={3}
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              placeholder="Parcel size, fragile items, landmark…"
-              inputProps={{ "aria-label": "Pickup notes" }}
-            />
-          </Box>
-
-          <Box
-            sx={{
-              position: "fixed",
-              left: 0,
-              right: 0,
-              bottom: 0,
-              px: 2,
-              pt: 1.5,
-              pb: "calc(16px + env(safe-area-inset-bottom))",
-              bgcolor: "background.default",
-              borderTop: "1px solid",
-              borderColor: "divider",
-            }}
-          >
-            {error && (
-              <Typography
-                role="alert"
-                variant="body2"
-                sx={{ color: "error.main", mb: 1 }}
-              >
-                {error}
-              </Typography>
+            </Stack>
+            {error && <Alert severity="error">{error}</Alert>}
+            {step === "route" && (
+              <>
+                <Typography color="text.secondary">
+                  Where should your rider collect and deliver the parcel?
+                </Typography>
+                {field("pickupAddress", "Pickup address", {
+                  multiline: true,
+                  required: true,
+                })}
+                <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}>
+                  <Button
+                    component={Link}
+                    href="/pickup/map"
+                    startIcon={<LocationOnOutlined />}
+                  >
+                    Pickup map pin{draft.pickupPoint ? " · Set" : ""}
+                  </Button>
+                  <Button
+                    disabled={gps}
+                    onClick={locate}
+                    startIcon={<MyLocationOutlined />}
+                  >
+                    {gps ? "Locating…" : "Use my location"}
+                  </Button>
+                </Stack>
+                {field("deliveryAddress", "Delivery address", {
+                  multiline: true,
+                  required: true,
+                })}
+                <Button
+                  component={Link}
+                  href="/pickup/map/delivery"
+                  startIcon={<LocationOnOutlined />}
+                  sx={{ alignSelf: "flex-start" }}
+                >
+                  Delivery map pin{draft.deliveryPoint ? " · Set" : ""}
+                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  Include building, street and township. Map pins are optional.
+                </Typography>
+              </>
             )}
+            {step === "details" && (
+              <>
+                {field("contactPhone", "Pickup contact phone", {
+                  type: "tel",
+                  required: true,
+                  autoComplete: "tel",
+                })}
+                {field("recipientName", "Recipient name", { required: true })}
+                {field("recipientPhone", "Recipient phone", {
+                  type: "tel",
+                  required: true,
+                })}
+                <TextField
+                  select
+                  fullWidth
+                  label="Parcel type"
+                  value={draft.parcelKind ?? ""}
+                  onChange={(event) =>
+                    update({
+                      parcelKind: event.target
+                        .value as PickupDraft["parcelKind"],
+                    })
+                  }
+                >
+                  {parcelKinds.map((kind) => (
+                    <MenuItem key={kind} value={kind}>
+                      {kind}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                {field("parcelDetails", "Parcel description", {
+                  multiline: true,
+                })}
+                <details>
+                  <summary
+                    style={{
+                      minHeight: 48,
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Size and handling
+                  </summary>
+                  <Stack spacing={1}>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Parcel size"
+                      value={draft.parcelSize}
+                      onChange={(event) =>
+                        update({
+                          parcelSize: event.target
+                            .value as PickupDraft["parcelSize"],
+                        })
+                      }
+                    >
+                      {parcelSizes.map((size) => (
+                        <MenuItem key={size.value} value={size.value}>
+                          {size.value} · {size.hint}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={draft.fragile}
+                          onChange={(_, checked) =>
+                            update({ fragile: checked })
+                          }
+                        />
+                      }
+                      label="Handle with care — fragile"
+                    />
+                  </Stack>
+                </details>
+                {field("codAmount", "Cash to collect (MMK)", { type: "text" })}
+                <Typography variant="caption" color="text.secondary">
+                  Leave blank or enter 0 if no cash needs collecting.
+                </Typography>
+                <details>
+                  <summary
+                    style={{
+                      minHeight: 48,
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Delivery instructions (optional)
+                  </summary>
+                  {field("notes", "Instructions for the rider", {
+                    multiline: true,
+                  })}
+                </details>
+              </>
+            )}
+            {step === "review" && (
+              <>
+                <Box>
+                  <Stack
+                    direction="row"
+                    sx={{
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography
+                      component="h2"
+                      variant="subtitle1"
+                      sx={{ fontWeight: 700 }}
+                    >
+                      Door to door
+                    </Typography>
+                    <Button component={Link} href="/pickup">
+                      Edit addresses
+                    </Button>
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary">
+                    Pickup
+                  </Typography>
+                  <Typography sx={{ mb: 2 }}>
+                    {draft.pickupAddress || "Address missing"}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Deliver to
+                  </Typography>
+                  <Typography>
+                    {draft.deliveryAddress || "Address missing"}
+                  </Typography>
+                </Box>
+                <Box sx={{ borderTop: 1, borderColor: "divider", pt: 1 }}>
+                  <Stack
+                    direction="row"
+                    sx={{
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography
+                      component="h2"
+                      variant="subtitle1"
+                      sx={{ fontWeight: 700 }}
+                    >
+                      Parcel and contacts
+                    </Typography>
+                    <Button component={Link} href="/pickup/details">
+                      Edit details
+                    </Button>
+                  </Stack>
+                  <Typography>{describeParcel(draft)}</Typography>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Pickup contact · {draft.contactPhone || "Missing"}
+                  </Typography>
+                  <Typography variant="body2">
+                    Recipient · {draft.recipientName || "Missing"} ·{" "}
+                    {draft.recipientPhone}
+                  </Typography>
+                </Box>
+                <Box sx={{ borderTop: 1, borderColor: "divider", pt: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Cash on delivery
+                  </Typography>
+                  <Typography sx={{ fontWeight: 700 }}>
+                    {Number.isFinite(Number(draft.codAmount))
+                      ? currency.format(Number(draft.codAmount || 0))
+                      : "Invalid amount"}{" "}
+                    to collect
+                  </Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  Your request starts as pending. Pickup timing is confirmed
+                  after a rider is assigned.
+                </Typography>
+              </>
+            )}
+          </Stack>
+          <Box className="pickup-dock">
             <Button
               fullWidth
-              type="submit"
               variant="contained"
-              size="large"
-              disabled={!ready || state === "sending"}
+              type="submit"
+              disabled={sending}
               sx={{ minHeight: 52 }}
             >
-              {state === "sending" ? "Sending…" : "Request pickup"}
+              {sending
+                ? "Sending request…"
+                : step === "route"
+                  ? "Continue to parcel details"
+                  : step === "details"
+                    ? "Review pickup"
+                    : "Request pickup"}
             </Button>
           </Box>
-        </Box>
+        </form>
       )}
-      <AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} />
     </main>
   );
 }

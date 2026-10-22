@@ -6,10 +6,12 @@ import CheckCircleOutlined from "@mui/icons-material/CheckCircleOutlined";
 import ChevronRight from "@mui/icons-material/ChevronRight";
 import Close from "@mui/icons-material/Close";
 import ContentPasteOutlined from "@mui/icons-material/ContentPasteOutlined";
+import HelpOutlineRounded from "@mui/icons-material/HelpOutlineRounded";
 import HistoryToggleOff from "@mui/icons-material/HistoryToggleOff";
 import Inventory2Outlined from "@mui/icons-material/Inventory2Outlined";
 import LocalShippingOutlined from "@mui/icons-material/LocalShippingOutlined";
 import NavigationOutlined from "@mui/icons-material/NavigationOutlined";
+import NotificationsNone from "@mui/icons-material/NotificationsNone";
 import PaymentsOutlined from "@mui/icons-material/PaymentsOutlined";
 import QrCodeScannerOutlined from "@mui/icons-material/QrCodeScannerOutlined";
 import Search from "@mui/icons-material/Search";
@@ -65,7 +67,6 @@ import {
 } from "@/lib/delivery/customer-home";
 import {
   currency,
-  formatDateTime,
   formatTime,
   nextCustomerAction,
   timeUntil,
@@ -122,7 +123,7 @@ export const CustomerHeader = memo(function CustomerHeader({
     >
       <Toolbar
         disableGutters
-        sx={{ minHeight: 72, px: 2, gap: 1, alignItems: "center" }}
+        sx={{ minHeight: 64, px: 2, gap: 1, alignItems: "center" }}
       >
         {onBack && (
           <IconButton
@@ -139,7 +140,13 @@ export const CustomerHeader = memo(function CustomerHeader({
             variant="h5"
             component="h1"
             noWrap
-            sx={{ fontWeight: 750, lineHeight: "30px" }}
+            sx={{
+              fontWeight: 700,
+              fontSize: 22,
+              lineHeight: "30px",
+              overflowWrap: "anywhere",
+              whiteSpace: "normal",
+            }}
           >
             {title}
           </Typography>
@@ -166,12 +173,7 @@ export const CustomerHeader = memo(function CustomerHeader({
               sx={{ width: 48, height: 48 }}
             >
               <Badge badgeContent={unreadCount} color="error" max={9}>
-                <Box
-                  component="img"
-                  src="/icons/notifications.svg"
-                  alt=""
-                  sx={{ display: "block", width: 32, height: 32 }}
-                />
+                <NotificationsNone />
               </Badge>
             </IconButton>
           ) : null)}
@@ -261,26 +263,27 @@ function heroCopy(order: DeliveryOrder, now: number) {
 
 /** Secondary shortcut: a quiet filled row, no outline, so the next parcel stays primary. */
 function ShortcutRow({
-  illustration,
+  icon,
   title,
   detail,
   ...rest
 }: {
-  illustration: string;
+  icon: ReactNode;
   title: string;
   detail: string;
 } & ({ component: typeof Link; href: string } | { onClick: () => void })) {
   return (
     <ListItemButton
       {...rest}
-      sx={{ gap: 1.5, minHeight: 72, px: 1.5, borderRadius: "16px" }}
+      sx={{
+        gap: 1.5,
+        minHeight: 64,
+        px: 0,
+        borderBottom: 1,
+        borderColor: "divider",
+      }}
     >
-      <Box
-        component="img"
-        src={illustration}
-        alt=""
-        sx={{ display: "block", width: 48, height: 48, flex: "none" }}
-      />
+      {icon}
       <ListItemText
         primary={title}
         secondary={detail}
@@ -300,7 +303,7 @@ const PickupHero = memo(function PickupHero() {
       sx={{
         mx: 2,
         mt: 1,
-        borderRadius: "24px",
+        borderRadius: "16px",
         bgcolor: (theme) =>
           theme.palette.mode === "dark"
             ? alpha(theme.palette.primary.main, 0.16)
@@ -329,17 +332,7 @@ const PickupHero = memo(function PickupHero() {
               Book a rider to collect your parcel in Yangon.
             </Typography>
           </Box>
-          <Box
-            component="img"
-            src="/icons/pickup.svg"
-            alt=""
-            sx={{
-              display: "block",
-              width: { xs: 72, sm: 88 },
-              height: { xs: 72, sm: 88 },
-              flex: "none",
-            }}
-          />
+          <Inventory2Outlined sx={{ fontSize: 28, color: "primary.main" }} />
         </Stack>
       </CardActionArea>
     </Card>
@@ -361,12 +354,7 @@ const PickupRow = memo(function PickupRow() {
           bgcolor: "grey.100",
         }}
       >
-        <Box
-          component="img"
-          src="/icons/pickup.svg"
-          alt=""
-          sx={{ display: "block", width: 40, height: 40, flex: "none" }}
-        />
+        <Inventory2Outlined sx={{ fontSize: 28, color: "primary.main" }} />
         <ListItemText
           primary="Request a pickup"
           secondary="Book a rider to collect a parcel in Yangon."
@@ -391,8 +379,6 @@ const MoreShortcuts = memo(function MoreShortcuts({
       sx={{
         mx: 2,
         mt: 3,
-        borderRadius: "16px",
-        bgcolor: "grey.100",
         overflow: "hidden",
       }}
     >
@@ -401,7 +387,7 @@ const MoreShortcuts = memo(function MoreShortcuts({
           <ShortcutRow
             component={Link}
             href="/track"
-            illustration="/icons/track-parcel.svg"
+            icon={<TrackChangesOutlined color="action" />}
             title="Track a parcel"
             detail="Enter a tracking code or scan it."
           />
@@ -409,7 +395,7 @@ const MoreShortcuts = memo(function MoreShortcuts({
         <ListItem disablePadding>
           <ShortcutRow
             onClick={onOpenHelp}
-            illustration="/icons/get-help.svg"
+            icon={<HelpOutlineRounded color="action" />}
             title="Help and support"
             detail="Delivery questions and issues."
           />
@@ -944,12 +930,7 @@ export function CustomerHome({
                 bgcolor: "grey.100",
               }}
             >
-              <Box
-                component="img"
-                src="/icons/arriving-today.svg"
-                alt=""
-                sx={{ display: "block", width: 48, height: 48, flex: "none" }}
-              />
+              <Inventory2Outlined color="action" />
               <ListItemText
                 primary="No active deliveries"
                 secondary="Parcels on their way to you appear here. Have a code? Track it."
@@ -965,64 +946,23 @@ export function CustomerHome({
       </Box>
 
       {isAuthenticated && historyOrders.length > 0 && (
-        <Box
-          component="section"
-          aria-labelledby="delivery-history-title"
-          sx={{ mt: 2 }}
-        >
-          <Stack
-            direction="row"
-            sx={{ alignItems: "center", px: 2, minHeight: 40 }}
+        <Box sx={{ px: 2, mt: 2 }}>
+          <ListItemButton
+            component={Link}
+            href="/orders?section=history"
+            sx={{
+              minHeight: 56,
+              px: 0,
+              borderBottom: 1,
+              borderColor: "divider",
+            }}
           >
-            <Typography
-              id="delivery-history-title"
-              variant="h6"
-              component="h2"
-              sx={{ fontWeight: 750 }}
-            >
-              History
-            </Typography>
-            <Button
-              component={Link}
-              href="/orders"
-              color="secondary"
-              endIcon={<ArrowForward />}
-              sx={{ ml: "auto", minHeight: 40, fontWeight: 700 }}
-            >
-              See all
-            </Button>
-          </Stack>
-          <List disablePadding sx={{ px: 2, display: "grid", gap: 1 }}>
-            {historyOrders.slice(0, 3).map((order) => (
-              <ListItem key={order.id} disablePadding>
-                <ListItemButton
-                  component={Link}
-                  href={`/track?order=${encodeURIComponent(order.id)}`}
-                  sx={{
-                    gap: 1.5,
-                    minHeight: 64,
-                    px: 1.5,
-                    borderRadius: "16px",
-                    bgcolor: "grey.100",
-                  }}
-                >
-                  <ListItemText
-                    sx={{ m: 0, minWidth: 0 }}
-                    primary={order.delivery_address}
-                    secondary={`${order.tracking_code} · ${formatDateTime(order.created_at)}`}
-                    slotProps={{
-                      primary: {
-                        noWrap: true,
-                        sx: { fontWeight: 700, fontSize: 14 },
-                      },
-                      secondary: { noWrap: true, sx: { fontSize: 12 } },
-                    }}
-                  />
-                  <StatusChip status={order.status} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
+            <ListItemText
+              primary="Delivery history"
+              secondary="Delivered, cancelled and unsuccessful deliveries"
+            />
+            <ChevronRight color="action" />
+          </ListItemButton>
         </Box>
       )}
 

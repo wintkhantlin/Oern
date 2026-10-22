@@ -63,7 +63,9 @@ export function PickupMapPage({
       map?.flyTo({
         center: [target.longitude, target.latitude],
         zoom,
-        duration: 700,
+        duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? 0
+          : 700,
       });
     },
     [map],
@@ -78,10 +80,12 @@ export function PickupMapPage({
     navigator.geolocation.getCurrentPosition(
       (fix) => {
         setGps("idle");
-        flyTo({
+        const position = {
           latitude: fix.coords.latitude,
           longitude: fix.coords.longitude,
-        });
+        };
+        setPoint(position);
+        flyTo(position);
       },
       (error) =>
         setGps(
@@ -205,6 +209,7 @@ export function PickupMapPage({
 
   return (
     <main
+      className="customer-pickup-map"
       style={{
         position: "fixed",
         inset: 0,

@@ -15,15 +15,17 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
 import OutlinedInput from "@mui/material/OutlinedInput";
 import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
-
 import { CustomerSheet as Sheet } from "@/components/delivery/customer-sheet";
 import { createSupportCase } from "@/lib/delivery/operations-actions";
 import type { DeliveryOrder } from "@/lib/delivery/types";
+import { STATUS_LABELS } from "@/lib/delivery/types";
 import { createClient } from "@/lib/supabase/client";
 
 export const faqs = [
@@ -54,6 +56,7 @@ export type HelpTopic = (typeof HELP_TOPICS)[number];
 export type HelpSheetProps = {
   open: boolean;
   order: DeliveryOrder | null;
+  orders?: DeliveryOrder[];
   /** Signed-in customer's id; requests need an account to follow up on. */
   requesterId: string | null;
   /** Off on the parcel's own Track page, where the status is already shown. */
@@ -69,12 +72,16 @@ export type HelpSheetProps = {
  */
 export function HelpSheet({
   open,
-  order,
+  order: contextOrder,
+  orders = [],
   requesterId,
   showStatusLink = true,
   onSignIn,
   onClose,
 }: HelpSheetProps) {
+  const [selectedId, setSelectedId] = useState("");
+  const order =
+    contextOrder ?? orders.find((item) => item.id === selectedId) ?? null;
   const [topic, setTopic] = useState<HelpTopic | null>(null);
   const [details, setDetails] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">(
@@ -88,6 +95,7 @@ export function HelpSheet({
     !["delivered", "failed", "cancelled"].includes(order.status);
 
   function close() {
+    if (state === "sending") return;
     if (state === "sent") {
       setTopic(null);
       setDetails("");
@@ -99,7 +107,8 @@ export function HelpSheet({
 
   async function send(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!requesterId || !topic || !details.trim()) return;
+    if (!requesterId || !topic || !details.trim() || state === "sending")
+      return;
     setState("sending");
     setError(null);
     try {
@@ -131,9 +140,28 @@ export function HelpSheet({
 
   return (
     <Sheet open={open} onClose={close} titleId="help-title" title="Get help">
+      {!contextOrder && orders.length > 0 && (
+        <TextField
+          select
+          fullWidth
+          label="Which delivery?"
+          value={selectedId}
+          disabled={state === "sending" || state === "sent"}
+          onChange={(event) => setSelectedId(event.target.value)}
+          sx={{ mt: 1, mb: 2 }}
+        >
+          <MenuItem value="">General account help</MenuItem>
+          {orders.map((item) => (
+            <MenuItem key={item.id} value={item.id}>
+              {item.tracking_code} · {STATUS_LABELS[item.status]}
+            </MenuItem>
+          ))}
+        </TextField>
+      )}
       {order && (
         <Typography variant="body2" sx={{ color: "text.secondary", mb: 1.5 }}>
-          About parcel <strong>{order.tracking_code}</strong>
+          About parcel <strong>{order.tracking_code}</strong> ·{" "}
+          {STATUS_LABELS[order.status]}
         </Typography>
       )}
       {(canCall || (order && showStatusLink)) && (

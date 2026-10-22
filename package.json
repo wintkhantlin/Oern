@@ -11,7 +11,8 @@
     "traffic:editor": "node scripts/traffic-editor.mjs",
     "format": "biome format --write",
     "playground:classifier": "bun playground/backend.js",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:types": "tsc --project tsconfig.e2e.json --noEmit"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
