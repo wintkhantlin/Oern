@@ -17,11 +17,6 @@
   ],
   "redirects": [],
   "rewrites": [],
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
-    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "@next_public_supabase_publishable_key",
-    "NEXT_PUBLIC_MAPBOX_TOKEN": "@next_public_mapbox_token"
-  },
   "functions": {
     "api/**/*.ts": {
       "maxDuration": 30
