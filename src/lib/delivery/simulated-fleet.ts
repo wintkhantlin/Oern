@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { type Observable, of, timer } from "rxjs";
+import { map, shareReplay } from "rxjs/operators";
 
-import type { DeliveryOrder } from "@/lib/delivery/types";
+import type { DeliveryOrder } from "./types.ts";
+import { useObservable } from "../rxjs/use-observable.ts";
 
 /**
  * Fake cars driving around Yangon, kept in memory only: nothing is written to
@@ -207,71 +210,81 @@ function loopKm(path: LatLng[]) {
   );
 }
 
+const EMPTY_FLEET: DeliveryOrder[] = [];
+
+/**
+ * Creates an RxJS stream of simulated cars driving around Yangon.
+ */
+export function createSimulatedFleetObservable(
+  enabled: boolean,
+  tickMs: number = 2000,
+): Observable<DeliveryOrder[]> {
+  if (!enabled) return of(EMPTY_FLEET);
+
+  const loops = new Map(SIM_CARS.map((car) => [car.id, loopKm(car.path)]));
+
+  return timer(0, tickMs).pipe(
+    map(() => {
+      const now = Date.now();
+      const recorded = new Date(now).toISOString();
+      return SIM_CARS.map((car, index): DeliveryOrder => {
+        const lap = loops.get(car.id) ?? 1;
+        const km = (now / 3_600_000) * car.speedKmh + car.offset * lap;
+        const [latitude, longitude] = pointAlong(car.path, km);
+        const [destLat, destLng] = car.destination.point;
+        const remainingKm = legKm([latitude, longitude], car.destination.point);
+        return {
+          id: car.id,
+          tracking_code: `SIM-C${String(index + 1).padStart(2, "0")}`,
+          customer_id: null,
+          customer_name: "Simulated delivery",
+          status: "in_transit",
+          pickup_address: "Simulated depot",
+          delivery_address: car.destination.address,
+          pickup_latitude: null,
+          pickup_longitude: null,
+          delivery_latitude: destLat,
+          delivery_longitude: destLng,
+          recipient_name: null,
+          recipient_phone: null,
+          parcel_description: null,
+          parcel_weight_kg: null,
+          cod_amount: 0,
+          cod_status: "not_required",
+          estimated_delivery_at: new Date(
+            now + (remainingKm / car.speedKmh) * 3_600_000,
+          ).toISOString(),
+          route_progress_percent: null,
+          traffic_delay_minutes: 0,
+          eta_confidence: null,
+          eta_updated_at: null,
+          created_at: recorded,
+          driver_id: `${car.id}-driver`,
+          driver_name: car.driver,
+          driver_phone: null,
+          vehicle_id: `${car.id}-vehicle`,
+          vehicle_label: `${car.plate} · ${car.type}`,
+          latest_location: {
+            latitude,
+            longitude,
+            accuracy_meters: 8,
+            recorded_at: recorded,
+          },
+        };
+      });
+    }),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+}
+
 /**
  * Simulated cars as moving orders, so every map that draws `movingOrders` shows
- * them. Turned off, it returns nothing and runs no timer.
+ * them. Powered by createSimulatedFleetObservable and React 19's useSyncExternalStore.
  */
-export function useSimulatedFleet(enabled: boolean, tickMs = 2000) {
-  const [now, setNow] = useState(() => Date.now());
-  const loops = useMemo(
-    () => new Map(SIM_CARS.map((car) => [car.id, loopKm(car.path)])),
-    [],
+export function useSimulatedFleet(enabled: boolean, tickMs = 2000): DeliveryOrder[] {
+  const fleet$ = useMemo(
+    () => createSimulatedFleetObservable(enabled, tickMs),
+    [enabled, tickMs],
   );
-
-  useEffect(() => {
-    if (!enabled) return;
-    setNow(Date.now());
-    const timer = window.setInterval(() => setNow(Date.now()), tickMs);
-    return () => window.clearInterval(timer);
-  }, [enabled, tickMs]);
-
-  return useMemo<DeliveryOrder[]>(() => {
-    if (!enabled) return [];
-    const recorded = new Date(now).toISOString();
-    return SIM_CARS.map((car, index) => {
-      const lap = loops.get(car.id) ?? 1;
-      const km = (now / 3_600_000) * car.speedKmh + car.offset * lap;
-      const [latitude, longitude] = pointAlong(car.path, km);
-      const [destLat, destLng] = car.destination.point;
-      const remainingKm = legKm([latitude, longitude], car.destination.point);
-      return {
-        id: car.id,
-        tracking_code: `SIM-C${String(index + 1).padStart(2, "0")}`,
-        customer_id: null,
-        customer_name: "Simulated delivery",
-        status: "in_transit",
-        pickup_address: "Simulated depot",
-        delivery_address: car.destination.address,
-        pickup_latitude: null,
-        pickup_longitude: null,
-        delivery_latitude: destLat,
-        delivery_longitude: destLng,
-        recipient_name: null,
-        recipient_phone: null,
-        parcel_description: null,
-        parcel_weight_kg: null,
-        cod_amount: 0,
-        cod_status: "not_required",
-        estimated_delivery_at: new Date(
-          now + (remainingKm / car.speedKmh) * 3_600_000,
-        ).toISOString(),
-        route_progress_percent: null,
-        traffic_delay_minutes: 0,
-        eta_confidence: null,
-        eta_updated_at: null,
-        created_at: recorded,
-        driver_id: `${car.id}-driver`,
-        driver_name: car.driver,
-        driver_phone: null,
-        vehicle_id: `${car.id}-vehicle`,
-        vehicle_label: `${car.plate} · ${car.type}`,
-        latest_location: {
-          latitude,
-          longitude,
-          accuracy_meters: 8,
-          recorded_at: recorded,
-        },
-      };
-    });
-  }, [enabled, now, loops]);
+  return useObservable(fleet$, EMPTY_FLEET);
 }

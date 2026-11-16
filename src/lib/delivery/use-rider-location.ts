@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Observable } from "rxjs";
 import type { GpsState } from "@/components/delivery/rider-active";
 import { sendDriverLocation } from "@/lib/delivery/actions";
 import type { DeliveryStop } from "@/lib/delivery/driver-route";
@@ -12,6 +13,63 @@ import { PREVIEW_DEPOT } from "@/lib/delivery/rider-preview";
 import { distanceKm, type GeoPoint } from "@/lib/delivery/rider-route";
 import { usePermissionRecovery } from "@/lib/delivery/use-permission-recovery";
 import { createClient } from "@/lib/supabase/client";
+
+export type GpsStreamEvent =
+  | { type: "position"; position: DevicePosition }
+  | { type: "state"; state: GpsState };
+
+export function createDeviceGpsObservable(
+  wantsGps: boolean,
+  geolocation: Geolocation | null,
+): Observable<GpsStreamEvent> {
+  return new Observable<GpsStreamEvent>((subscriber) => {
+    if (!wantsGps) {
+      subscriber.next({ type: "state", state: "off" });
+      subscriber.complete();
+      return;
+    }
+    if (!geolocation) {
+      subscriber.next({ type: "state", state: "unavailable" });
+      subscriber.complete();
+      return;
+    }
+    subscriber.next({ type: "state", state: "waiting" });
+    const id = geolocation.watchPosition(
+      (fix) => {
+        subscriber.next({
+          type: "position",
+          position: {
+            latitude: fix.coords.latitude,
+            longitude: fix.coords.longitude,
+            heading:
+              fix.coords.heading != null && Number.isFinite(fix.coords.heading)
+                ? fix.coords.heading
+                : null,
+            speedKmh:
+              fix.coords.speed != null && Number.isFinite(fix.coords.speed)
+                ? Math.max(0, Math.round(fix.coords.speed * 3.6))
+                : null,
+            accuracy: fix.coords.accuracy ?? null,
+            at: fix.timestamp || Date.now(),
+          },
+        });
+        subscriber.next({ type: "state", state: "live" });
+      },
+      (error) => {
+        subscriber.next({
+          type: "state",
+          state:
+            error.code === error.PERMISSION_DENIED ? "denied" : "unavailable",
+        });
+      },
+      { enableHighAccuracy: true, maximumAge: 10_000, timeout: 30_000 },
+    );
+
+    return () => {
+      geolocation.clearWatch(id);
+    };
+  });
+}
 
 export type RiderLocationOptions = {
   wantsGps: boolean;
@@ -44,40 +102,23 @@ export function useRiderLocation({
 
   useEffect(() => {
     void gpsAttempt;
-    if (!wantsGps) {
-      setGps("off");
-      return;
-    }
-    if (!("geolocation" in navigator)) {
-      setGps("unavailable");
-      return;
-    }
-    setGps((state) => (state === "live" ? state : "waiting"));
-    const id = navigator.geolocation.watchPosition(
-      (fix) => {
-        setPosition({
-          latitude: fix.coords.latitude,
-          longitude: fix.coords.longitude,
-          heading:
-            fix.coords.heading != null && Number.isFinite(fix.coords.heading)
-              ? fix.coords.heading
-              : null,
-          speedKmh:
-            fix.coords.speed != null && Number.isFinite(fix.coords.speed)
-              ? Math.max(0, Math.round(fix.coords.speed * 3.6))
-              : null,
-          accuracy: fix.coords.accuracy ?? null,
-          at: fix.timestamp || Date.now(),
-        });
-        setGps("live");
+    const geo =
+      typeof navigator !== "undefined" && "geolocation" in navigator
+        ? navigator.geolocation
+        : null;
+    const gps$ = createDeviceGpsObservable(wantsGps, geo);
+    const subscription = gps$.subscribe({
+      next: (event) => {
+        if (event.type === "position") {
+          setPosition(event.position);
+        } else {
+          setGps((state) =>
+            event.state === "waiting" && state === "live" ? state : event.state,
+          );
+        }
       },
-      (error) =>
-        setGps(
-          error.code === error.PERMISSION_DENIED ? "denied" : "unavailable",
-        ),
-      { enableHighAccuracy: true, maximumAge: 10_000, timeout: 30_000 },
-    );
-    return () => navigator.geolocation.clearWatch(id);
+    });
+    return () => subscription.unsubscribe();
   }, [wantsGps, gpsAttempt]);
 
   // Auto-recover when location permission is granted in browser settings

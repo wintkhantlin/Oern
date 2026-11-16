@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { Observable } from "rxjs";
 import type {
   DeliveryLocation,
   DeliveryOrder,
@@ -8,8 +9,8 @@ import type {
 } from "@/lib/delivery/types";
 import type { Database } from "@/lib/supabase/database.types";
 
-type LocationRow = DeliveryLocation & { order_id: string };
-type OrderUpdate = Pick<
+export type LocationRow = DeliveryLocation & { order_id: string };
+export type OrderUpdate = Pick<
   DeliveryOrder,
   | "id"
   | "status"
@@ -23,6 +24,12 @@ type OrderUpdate = Pick<
   Partial<Pick<DeliveryOrder, "cod_amount" | "parcel_description">> & {
     notes?: string | null;
   };
+
+export type WorkspaceRealtimeAction =
+  | { type: "location"; location: LocationRow }
+  | { type: "order_update"; update: OrderUpdate }
+  | { type: "status_event"; event: StatusEvent }
+  | { type: "refresh"; reason?: string };
 
 export function mergeLocation(
   data: WorkspaceData,
@@ -88,8 +95,153 @@ export function mergeStatusEvent(
   };
 }
 
+/**
+ * Creates an RxJS stream of real-time database changes from Supabase.
+ * Encapsulates channel creation, table event listening, filtering, and cleanup.
+ */
+export function createWorkspaceRealtimeObservable(
+  supabase: Pick<SupabaseClient<Database>, "channel" | "removeChannel">,
+  {
+    userId,
+    role,
+  }: {
+    userId: string;
+    role: WorkspaceProfile["role"];
+  },
+): Observable<WorkspaceRealtimeAction> {
+  return new Observable<WorkspaceRealtimeAction>((subscriber) => {
+    let active = true;
+    const channel = supabase
+      .channel(`workspace-${role}-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "delivery_locations" },
+        (payload) => {
+          if (!active) return;
+          subscriber.next({
+            type: "location",
+            location: payload.new as LocationRow,
+          });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "road_reports" },
+        () => {
+          if (active && role !== "customer") {
+            subscriber.next({ type: "refresh", reason: "road_reports" });
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "rider_assistance_requests",
+          ...(role === "driver" ? { filter: `driver_id=eq.${userId}` } : {}),
+        },
+        () => {
+          // Riders see operations acknowledge their request; dispatch sees it arrive.
+          if (active && (role === "manager" || role === "driver")) {
+            subscriber.next({
+              type: "refresh",
+              reason: "rider_assistance_requests",
+            });
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "delivery_orders",
+          ...(role === "customer" ? { filter: `customer_id=eq.${userId}` } : {}),
+        },
+        (payload) => {
+          if (!active) return;
+          if (payload.eventType === "UPDATE") {
+            subscriber.next({
+              type: "order_update",
+              update: payload.new as OrderUpdate,
+            });
+          }
+          subscriber.next({ type: "refresh", reason: "delivery_orders" });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "delivery_status_events" },
+        (payload) => {
+          if (!active) return;
+          subscriber.next({
+            type: "status_event",
+            event: payload.new as StatusEvent,
+          });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "delivery_assignments",
+          ...(role === "driver" ? { filter: `driver_id=eq.${userId}` } : {}),
+        },
+        () => {
+          if (active) {
+            subscriber.next({ type: "refresh", reason: "delivery_assignments" });
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "delivery_routes" },
+        () => {
+          if (active) {
+            subscriber.next({ type: "refresh", reason: "delivery_routes" });
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "route_stops" },
+        () => {
+          if (active) {
+            subscriber.next({ type: "refresh", reason: "route_stops" });
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "delivery_jobs" },
+        () => {
+          // Drivers taking or finishing jobs change what dispatch sees.
+          if (active && role !== "customer") {
+            subscriber.next({ type: "refresh", reason: "delivery_jobs" });
+          }
+        },
+      )
+      .subscribe((status) => {
+        if (active && status === "SUBSCRIBED") {
+          subscriber.next({ type: "refresh", reason: "subscribed" });
+        }
+      });
+
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  });
+}
+
+/**
+ * Subscribes to real-time updates and applies them to workspace data.
+ * Powered by createWorkspaceRealtimeObservable under the hood.
+ */
 export function subscribeWorkspaceRealtime(
-  supabase: SupabaseClient<Database>,
+  supabase: Pick<SupabaseClient<Database>, "channel" | "removeChannel">,
   {
     userId,
     role,
@@ -102,105 +254,31 @@ export function subscribeWorkspaceRealtime(
     refresh: () => void;
   },
 ) {
-  let active = true;
-  const channel = supabase
-    .channel(`workspace-${role}-${userId}`)
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "delivery_locations" },
-      (payload) => {
-        if (!active) return;
-        updateData((previous) =>
-          mergeLocation(previous, payload.new as LocationRow),
-        );
-      },
-    )
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "road_reports" },
-      () => {
-        if (active && role !== "customer") refresh();
-      },
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "rider_assistance_requests",
-        ...(role === "driver" ? { filter: `driver_id=eq.${userId}` } : {}),
-      },
-      () => {
-        // Riders see operations acknowledge their request; dispatch sees it arrive.
-        if (active && (role === "manager" || role === "driver")) refresh();
-      },
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "delivery_orders",
-        ...(role === "customer" ? { filter: `customer_id=eq.${userId}` } : {}),
-      },
-      (payload) => {
-        if (!active) return;
-        if (payload.eventType === "UPDATE")
-          updateData((previous) =>
-            mergeOrderUpdate(previous, payload.new as OrderUpdate),
-          );
-        refresh();
-      },
-    )
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "delivery_status_events" },
-      (payload) => {
-        if (!active) return;
-        updateData((previous) =>
-          mergeStatusEvent(previous, payload.new as StatusEvent),
-        );
-      },
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "delivery_assignments",
-        ...(role === "driver" ? { filter: `driver_id=eq.${userId}` } : {}),
-      },
-      () => {
-        if (active) refresh();
-      },
-    )
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "delivery_routes" },
-      () => {
-        if (active) refresh();
-      },
-    )
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "route_stops" },
-      () => {
-        if (active) refresh();
-      },
-    )
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "delivery_jobs" },
-      () => {
-        // Drivers taking or finishing jobs change what dispatch sees.
-        if (active && role !== "customer") refresh();
-      },
-    )
-    .subscribe((status) => {
-      if (active && status === "SUBSCRIBED") refresh();
-    });
+  const actions$ = createWorkspaceRealtimeObservable(supabase, {
+    userId,
+    role,
+  });
+
+  const subscription = actions$.subscribe({
+    next: (action) => {
+      switch (action.type) {
+        case "location":
+          updateData((previous) => mergeLocation(previous, action.location));
+          break;
+        case "order_update":
+          updateData((previous) => mergeOrderUpdate(previous, action.update));
+          break;
+        case "status_event":
+          updateData((previous) => mergeStatusEvent(previous, action.event));
+          break;
+        case "refresh":
+          refresh();
+          break;
+      }
+    },
+  });
+
   return () => {
-    active = false;
-    void supabase.removeChannel(channel);
+    subscription.unsubscribe();
   };
 }
