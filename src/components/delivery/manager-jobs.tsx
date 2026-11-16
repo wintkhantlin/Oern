@@ -1,30 +1,25 @@
 "use client";
 
-import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
+import { ConsoleShell } from "@/components/console/console-shell";
 import { AuthDialog } from "@/components/delivery/auth-dialog";
 import {
   ActionToast,
-  DemoBadge,
   LoadingBlock,
-  MobileNav,
-  type MobileNavItem,
   PageHeader,
   SignInGate,
-  signOut,
-  UserActions,
 } from "@/components/delivery/common";
-import { Icon, type IconName } from "@/components/delivery/icons";
-import { floodZoneAt } from "@/components/delivery/manager-flood-watch";
-import { ManagerSidebar } from "@/components/delivery/manager-sidebar";
-import {
-  type FloodZone,
-  getYangonFloodZones,
-} from "@/lib/delivery/flood-zones";
+import { Icon } from "@/components/delivery/icons";
 import { currency, formatDateTime } from "@/lib/delivery/format";
 import {
-  autoAcceptOrders,
   confirmOrders,
   createJobBatch,
   type DeliveryJob,
@@ -34,7 +29,6 @@ import {
   type QueueEntry,
   releaseJob,
   SAMPLE_OPEN_JOBS,
-  unqueueOrders,
 } from "@/lib/delivery/jobs";
 import "./manager-jobs.css";
 import { useWorkspace } from "@/lib/delivery/use-workspace";
@@ -42,35 +36,6 @@ import { createClient } from "@/lib/supabase/client";
 
 function friendly(cause: unknown) {
   return cause instanceof Error ? cause.message : "Something went wrong.";
-}
-
-const mobileNavItems: MobileNavItem[] = [
-  { id: "home", label: "Overview", href: "/manager/home", icon: "delivery" },
-  { id: "order", label: "Orders", href: "/manager/order", icon: "box" },
-  { id: "track", label: "Track", href: "/manager/track", icon: "track" },
-  { id: "cod", label: "COD", href: "/manager/cod", icon: "coin" },
-  { id: "jobs", label: "Automation", href: "/manager/jobs", icon: "spark" },
-];
-
-function EmptyStage({ icon, children }: { icon: IconName; children: string }) {
-  return (
-    <div className="jobs-empty">
-      <span className="jobs-empty-icon">
-        <Icon name={icon} size={22} />
-      </span>
-      <p>{children}</p>
-    </div>
-  );
-}
-
-function FloodChip({ zone }: { zone: FloodZone | null }) {
-  if (!zone) return null;
-  return (
-    <em className="flood-chip" data-class={zone.hazardClass}>
-      <Icon name="flood" size={13} />
-      {zone.name}
-    </em>
-  );
 }
 
 const BOARD_COLUMNS = [
@@ -137,10 +102,6 @@ export function ManagerJobsApp() {
     () => new Set(queue.map((entry) => entry.order_id)),
     [queue],
   );
-  const orderById = useMemo(
-    () => new Map(workspace.data.orders.map((order) => [order.id, order])),
-    [workspace.data.orders],
-  );
   // Live requests drive the bulk actions; sample rows are display-only.
   const liveRequests = useMemo(
     () =>
@@ -149,58 +110,60 @@ export function ManagerJobsApp() {
       ),
     [workspace.data.orders, queuedIds],
   );
-  const requests = useMemo(() => liveRequests, [liveRequests]);
   const waiting = queue.filter((entry) => !entry.job_id);
-  const floodZones = useMemo(() => getYangonFloodZones(), []);
   // Demo mode has no jobs table behind it, so show the sample tasks instead.
   const tasks = useMemo(
     () => (workspace.isDemo ? SAMPLE_OPEN_JOBS : jobs),
     [workspace.isDemo, jobs],
   );
-  const activeTaskCount = tasks.filter((job) =>
-    ["open", "claimed", "in_progress"].includes(job.status),
-  ).length;
+  const activeTasks = useMemo(
+    () =>
+      tasks.filter((job) =>
+        ["open", "claimed", "in_progress"].includes(job.status),
+      ),
+    [tasks],
+  );
+  const activeTaskCount = activeTasks.length;
   const driverName = (id: string | null) =>
     id
       ? (workspace.data.drivers.find((driver) => driver.id === id)?.full_name ??
         "Driver")
       : null;
 
+  /** Resolves true when the action succeeded. */
   async function run(action: () => Promise<string>) {
-    if (busy) return;
+    if (busy) return false;
     if (!live) {
       setMessage("Sign in with a manager account to change jobs.");
-      return;
+      return false;
     }
     setBusy(true);
     setError(null);
     try {
       setMessage(await action());
       await reload();
+      return true;
     } catch (cause) {
       setError(friendly(cause));
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
-  const accept = (ids: string[]) =>
+  const post = (ids: string[]) =>
     run(async () => {
       const result = await confirmOrders(createClient(), ids);
       if (!result.confirmed) return "Nothing to post.";
       return `${plural(result.confirmed, "order")} posted as ${plural(result.jobs, "job")} on the driver board.`;
     });
 
-  const queueOrders = (ids?: string[]) =>
+  const groupWaiting = () =>
     run(async () => {
-      const count = await autoAcceptOrders(createClient(), ids);
-      return `${plural(count, "order")} added to the queue.`;
-    });
-
-  const remove = (id: string) =>
-    run(async () => {
-      await unqueueOrders(createClient(), [id]);
-      return "Order moved back to requests.";
+      const result = await createJobBatch(createClient());
+      return result.jobs
+        ? `Grouped ${plural(result.orders, "order")} into ${plural(result.jobs, "job")}.`
+        : "Nothing is waiting in the queue.";
     });
 
   const reopen = (id: string) =>
@@ -209,294 +172,136 @@ export function ManagerJobsApp() {
       return "Task reopened for other drivers.";
     });
 
-  const createNow = () =>
-    run(async () => {
-      const result = await createJobBatch(createClient());
-      return result.jobs
-        ? `Created ${plural(result.jobs, "job")} from ${plural(result.orders, "order")}.`
-        : "Nothing is waiting in the queue.";
-    });
+  // Always on: new requests are queued, grouped by area and posted without
+  // anyone clicking. A batch that fails is not retried until the set of
+  // orders changes or the page is reloaded.
+  const failedBatch = useRef<string | null>(null);
+  const autoKey = `${liveRequests.map((order) => order.id).join(",")}|${waiting.map((entry) => entry.order_id).join(",")}`;
+  const runAutomation = useEffectEvent(async () => {
+    if (liveRequests.length) {
+      const ok = await post(liveRequests.map((order) => order.id));
+      if (!ok) failedBatch.current = autoKey;
+    } else if (waiting.length) {
+      const ok = await groupWaiting();
+      if (!ok) failedBatch.current = autoKey;
+    }
+  });
+  useEffect(() => {
+    if (!live || !loaded || busy || failedBatch.current === autoKey) return;
+    void runAutomation();
+  }, [live, loaded, busy, autoKey]);
 
-  if (workspace.isLoading)
-    return <LoadingBlock title="Opening Task Automation…" />;
+  if (workspace.isLoading) return <LoadingBlock title="Opening jobs…" />;
   const signedOut = !workspace.isAuthenticated && !workspace.isDemo;
 
   return (
-    <main className="manager-app jobs-app">
-      <ManagerSidebar active="jobs" />
-      <MobileNav
-        label="Manager workspace"
-        items={mobileNavItems}
-        activeId="jobs"
-      />
-
-      <div className="manager-main">
-        <header className="manager-topbar">
-          <Link className="manager-topbar-brand" href="/manager/home">
-            <span aria-hidden="true">O</span>
-            Oern <small>Dispatch console</small>
-          </Link>
-          <div className="manager-topbar-right">
-            <UserActions
-              profile={workspace.profile}
-              isAuthenticated={workspace.isAuthenticated}
-              onSignIn={() => setAuthOpen(true)}
-              onSignOut={() => void signOut()}
-              label="Manager"
-            />
+    <ConsoleShell
+      active="jobs"
+      pageTitle="Jobs"
+      workspace={workspace}
+      onSignIn={() => setAuthOpen(true)}
+      className="jobs-app"
+      toolbar={
+        <button
+          type="button"
+          className="console-icon-btn"
+          aria-label={busy ? "Refreshing jobs" : "Refresh jobs"}
+          onClick={() => void reload()}
+          disabled={!live || busy}
+        >
+          <Icon name="refresh" size={16} />
+        </button>
+      }
+    >
+      <div className="manager-content">
+        <PageHeader
+          title="Jobs"
+          description="Follow driver jobs from open assignment through completion."
+        />
+        {(error || workspace.error) && (
+          <div className="error-notice" role="alert">
+            {error ?? workspace.error}
           </div>
-        </header>
+        )}
 
-        <div className="manager-content">
-          <nav className="manager-breadcrumbs" aria-label="Breadcrumb">
-            <ol>
-              <li>
-                <Link href="/manager/home">Oern</Link>
-              </li>
-              <li>
-                <Link href="/manager/home">Dispatch</Link>
-              </li>
-              <li aria-current="page">Task Automation</li>
-            </ol>
-          </nav>
-          <PageHeader
-            title="Task Automation"
-            description="Queue new requests and automation groups nearby drop-offs into jobs. Post now to skip the queue."
+        {signedOut ? (
+          <SignInGate
+            title="Sign in to jobs"
+            body="The live job board is available to manager accounts."
+            onSignIn={() => setAuthOpen(true)}
           />
-          {workspace.isDemo && (
-            <div className="workspace-demo manager-demo">
-              <DemoBadge>Demo operations</DemoBadge>
-              <span>
-                Sign in with a manager account to queue and post jobs.
-              </span>
-            </div>
-          )}
-          {(error || workspace.error) && (
-            <div className="error-notice" role="alert">
-              {error ?? workspace.error}
-            </div>
-          )}
-
-          {signedOut ? (
-            <SignInGate
-              title="Sign in to Task Automation"
-              body="Queue and jobs are available to manager accounts."
-              onSignIn={() => setAuthOpen(true)}
-            />
-          ) : !loaded ? (
-            <LoadingBlock title="Loading jobs…" />
-          ) : (
-            <>
-              <div className="jobs-pipeline">
-                <section className="jobs-stage" aria-labelledby="jobs-requests">
-                  <header className="jobs-stage-head">
-                    <h2 id="jobs-requests">
-                      New requests <span>{requests.length}</span>
-                    </h2>
-                    <div className="jobs-actions">
-                      <button
-                        type="button"
-                        className="button button-primary"
-                        disabled={!live || !liveRequests.length || busy}
-                        onClick={() => void queueOrders()}
-                      >
-                        Queue all
-                      </button>
-                      <button
-                        type="button"
-                        className="button button-outline"
-                        disabled={!live || !liveRequests.length || busy}
-                        onClick={() =>
-                          void accept(liveRequests.map((order) => order.id))
-                        }
-                      >
-                        Post all now
-                      </button>
-                    </div>
-                  </header>
-                  <div className="operations-list">
-                    {requests.map((order) => (
-                      <article className="operations-list-item" key={order.id}>
-                        <div>
-                          <strong>{order.tracking_code}</strong>
-                          <span>
-                            {order.recipient_name || "Recipient"} ·{" "}
-                            {order.delivery_address}
-                          </span>
-                          <span>
-                            {order.parcel_weight_kg
-                              ? `${order.parcel_weight_kg} kg`
-                              : "Weight not set"}
-                            {order.cod_amount
-                              ? ` · COD ${currency.format(order.cod_amount)}`
-                              : ""}
-                          </span>
-                          <FloodChip
-                            zone={floodZoneAt(
-                              order.delivery_latitude,
-                              order.delivery_longitude,
-                              floodZones,
-                            )}
-                          />
-                        </div>
-                        <div className="jobs-row-actions">
-                          <button
-                            type="button"
-                            className="button button-outline"
-                            disabled={!live || busy}
-                            aria-label={`Queue ${order.tracking_code}`}
-                            onClick={() => void queueOrders([order.id])}
-                          >
-                            Queue
-                          </button>
-                          <button
-                            type="button"
-                            className="button button-dark"
-                            disabled={!live || busy}
-                            aria-label={`Post ${order.tracking_code} now`}
-                            onClick={() => void accept([order.id])}
-                          >
-                            Post now
-                          </button>
-                        </div>
-                      </article>
-                    ))}
-                    {!requests.length && (
-                      <EmptyStage icon="package">
-                        No requests waiting. New pickup requests appear here.
-                      </EmptyStage>
-                    )}
-                  </div>
-                </section>
-
-                <section className="jobs-stage" aria-labelledby="jobs-queue">
-                  <header className="jobs-stage-head">
-                    <h2 id="jobs-queue">
-                      Queue <span>{waiting.length}</span>
-                    </h2>
-                    <button
-                      type="button"
-                      className="button button-outline"
-                      disabled={!live || !waiting.length || busy}
-                      onClick={() => void createNow()}
-                    >
-                      Group into jobs
-                    </button>
-                  </header>
-                  <div className="operations-list">
-                    {waiting.map((entry) => {
-                      const order = orderById.get(entry.order_id);
-                      const code = order?.tracking_code ?? "Order";
-                      return (
-                        <article
-                          className="operations-list-item"
-                          key={entry.order_id}
-                        >
-                          <div>
-                            <strong>{code}</strong>
+        ) : !loaded ? (
+          <LoadingBlock title="Loading jobs…" />
+        ) : (
+          <section className="jobs-board" aria-labelledby="jobs-tasks">
+            <header className="jobs-stage-head">
+              <h2 id="jobs-tasks">
+                Job board{" "}
+                <span className="mh-card-count">
+                  ({activeTaskCount} active)
+                </span>
+              </h2>
+            </header>
+            <div className="jobs-board-columns">
+              {BOARD_COLUMNS.map((column) => {
+                const all = tasks.filter((job) => job.status === column.status);
+                const shown =
+                  column.status === "completed"
+                    ? all.slice(0, DONE_LIMIT)
+                    : all;
+                return (
+                  <div
+                    className="jobs-board-column"
+                    data-status={column.status}
+                    key={column.status}
+                  >
+                    <h3>
+                      {column.title}{" "}
+                      <span className="mh-card-count">({all.length})</span>
+                    </h3>
+                    <ul>
+                      {shown.map((job) => {
+                        const driver = driverName(job.claimed_by);
+                        return (
+                          <li className="task-card" key={job.id}>
+                            <strong>{job.label}</strong>
                             <span>
-                              {order?.delivery_address ?? "Address unavailable"}
+                              {plural(job.order_count, "parcel")},{" "}
+                              {job.total_weight_kg} kg
+                              {job.cod_total
+                                ? `, COD ${currency.format(job.cod_total)}`
+                                : ""}
                             </span>
-                          </div>
-                          <button
-                            type="button"
-                            className="button button-outline"
-                            disabled={!live || busy}
-                            aria-label={`Move ${code} back to requests`}
-                            onClick={() => void remove(entry.order_id)}
-                          >
-                            Remove
-                          </button>
-                        </article>
-                      );
-                    })}
-                    {!waiting.length && (
-                      <EmptyStage icon="history">
-                        Queued orders wait here until automation groups them by
-                        area.
-                      </EmptyStage>
+                            {job.area_label && <span>{job.area_label}</span>}
+                            <span>
+                              {driver
+                                ? `${driver}, since ${formatDateTime(job.claimed_at ?? job.created_at)}`
+                                : `Posted ${formatDateTime(job.created_at)}`}
+                            </span>
+                            {job.status === "claimed" && (
+                              <button
+                                type="button"
+                                className="button button-outline"
+                                disabled={!live || busy || isSampleJob(job)}
+                                aria-label={`Reopen ${job.label} for other drivers`}
+                                onClick={() => void reopen(job.id)}
+                              >
+                                Reopen
+                              </button>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {!all.length && (
+                      <p className="jobs-board-empty">{column.hint}</p>
                     )}
                   </div>
-                </section>
-              </div>
-
-              <section className="jobs-board" aria-labelledby="jobs-tasks">
-                <header className="jobs-stage-head">
-                  <h2 id="jobs-tasks">
-                    Tasks <span>{activeTaskCount} active</span>
-                  </h2>
-                </header>
-                <div className="jobs-board-columns">
-                  {BOARD_COLUMNS.map((column) => {
-                    const all = tasks.filter(
-                      (job) => job.status === column.status,
-                    );
-                    const shown =
-                      column.status === "completed"
-                        ? all.slice(0, DONE_LIMIT)
-                        : all;
-                    return (
-                      <div
-                        className="jobs-board-column"
-                        data-status={column.status}
-                        key={column.status}
-                      >
-                        <h3>
-                          {column.title} <span>{all.length}</span>
-                        </h3>
-                        <ul>
-                          {shown.map((job) => {
-                            const zone = floodZoneAt(
-                              job.center_latitude,
-                              job.center_longitude,
-                              floodZones,
-                            );
-                            const driver = driverName(job.claimed_by);
-                            return (
-                              <li className="task-card" key={job.id}>
-                                <strong>{job.label}</strong>
-                                <span>
-                                  {plural(job.order_count, "parcel")} ·{" "}
-                                  {job.total_weight_kg} kg
-                                  {job.cod_total
-                                    ? ` · COD ${currency.format(job.cod_total)}`
-                                    : ""}
-                                </span>
-                                {job.area_label && (
-                                  <span>{job.area_label}</span>
-                                )}
-                                <span>
-                                  {driver
-                                    ? `${driver} · since ${formatDateTime(job.claimed_at ?? job.created_at)}`
-                                    : `Posted ${formatDateTime(job.created_at)}`}
-                                </span>
-                                <FloodChip zone={zone} />
-                                {job.status === "claimed" && (
-                                  <button
-                                    type="button"
-                                    className="button button-outline"
-                                    disabled={!live || busy || isSampleJob(job)}
-                                    aria-label={`Reopen ${job.label} for other drivers`}
-                                    onClick={() => void reopen(job.id)}
-                                  >
-                                    Reopen
-                                  </button>
-                                )}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                        {!all.length && (
-                          <p className="jobs-board-empty">{column.hint}</p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            </>
-          )}
-        </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
 
       <AuthDialog
@@ -505,6 +310,6 @@ export function ManagerJobsApp() {
         onClose={() => setAuthOpen(false)}
       />
       <ActionToast message={message} onDismiss={() => setMessage(null)} />
-    </main>
+    </ConsoleShell>
   );
 }

@@ -46,16 +46,14 @@ export function ManagerClassificationPage() {
       };
       setHistory([newEntry, ...history]);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Classification failed"
-      );
+      setError(err instanceof Error ? err.message : "Classification failed");
     } finally {
       setLoading(false);
     }
   };
 
   const getPriorityTone = (
-    priority: string
+    priority: string,
   ): "error" | "warning" | "info" | "success" => {
     switch (priority) {
       case "P1":
@@ -198,12 +196,8 @@ export function ManagerClassificationPage() {
                   <div className="mcp-result-grid">
                     <div className="mcp-result-item">
                       <span className="mcp-result-label">Mode</span>
-                      <div
-                        className={`mcp-mode-badge mcp-mode-${result.mode}`}
-                      >
-                        {result.mode === "jev"
-                          ? "AI (Jev)"
-                          : "Pattern-Based"}
+                      <div className={`mcp-mode-badge mcp-mode-${result.mode}`}>
+                        {result.mode === "jev" ? "AI (Jev)" : "Pattern-Based"}
                       </div>
                     </div>
 
@@ -341,7 +335,11 @@ export function ManagerClassificationPage() {
                           {item.mode === "jev" ? "AI" : "Pattern"}
                         </span>
                         <span className="mcp-history-confidence">
-                          {(item.categoryConfidence ? item.categoryConfidence * 100 : 0).toFixed(0)}%
+                          {(item.categoryConfidence
+                            ? item.categoryConfidence * 100
+                            : 0
+                          ).toFixed(0)}
+                          %
                         </span>
                         <button
                           className="mcp-delete-button"

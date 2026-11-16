@@ -259,7 +259,11 @@ function CouponSheet({
           <button type="button" className="button" onClick={onClose}>
             Cancel
           </button>
-          <button type="submit" className="button primary" disabled={saving}>
+          <button
+            type="submit"
+            className="button button-primary"
+            disabled={saving}
+          >
             {saving ? "Saving…" : "Save coupon"}
           </button>
         </div>
@@ -315,7 +319,7 @@ export function ManagerCoupons({ live }: { live: boolean }) {
           </div>
           <button
             type="button"
-            className="button primary"
+            className="button button-primary"
             disabled={!live}
             onClick={() => setEditing("new")}
           >
@@ -462,7 +466,7 @@ export function ManagerCoupons({ live }: { live: boolean }) {
             </button>
             <button
               type="button"
-              className="button primary"
+              className="button button-primary"
               onClick={() => void toggle(confirmOff, false)}
             >
               Turn off

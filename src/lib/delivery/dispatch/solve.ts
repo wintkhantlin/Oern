@@ -1,4 +1,4 @@
-import { construct, totalScore } from "./construct.ts";
+import { construct, dropUnprofitable, totalScore } from "./construct.ts";
 import { diagnose, refine } from "./diagnose.ts";
 import { improve } from "./improve.ts";
 import { hashString } from "./rng.ts";
@@ -54,6 +54,9 @@ export function solve(
       };
     }
   }
+
+  // Leave out orders that cost more to serve than their penalty.
+  dropUnprofitable(inst, matrix, state);
 
   const routeRefs = state.routes
     .map((seq, truckIndex) => ({

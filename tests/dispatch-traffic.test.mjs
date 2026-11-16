@@ -273,6 +273,47 @@ test("applyTraffic layers order-level traffic delays onto delivery destinations"
   );
 });
 
+test("applyTraffic skips corridor effects between distinct stops at one location", () => {
+  const points = [
+    { lat: 17.6, lng: 96.1 },
+    { lat: 17.6, lng: 96.1 },
+  ];
+  const base = buildStraightLineMatrix(points, {
+    speedKmh: 30,
+    roadFactor: 1.25,
+  });
+  const { matrix, summary } = applyTraffic(base, points, {
+    measuredSignals: [
+      {
+        id: "same-location-signal",
+        name: "Same location",
+        township: "Test",
+        latitude: 17.6,
+        longitude: 96.1,
+        cycleSeconds: 90,
+        meanDelaySeconds: 30,
+        dataType: "observed",
+        confidence: "verified",
+        surveyYear: 2026,
+        sourcePage: "test",
+        tableId: "test",
+      },
+    ],
+    congestion: [],
+    reports: [
+      { lat: 17.6, lng: 96.1, category: "closure", severity: "blocked" },
+    ],
+  });
+
+  assert.equal(matrix.time[1], 0);
+  assert.equal(matrix.time[2], 0);
+  assert.equal(matrix.blocked?.[1] ?? 0, 0);
+  assert.equal(matrix.blocked?.[2] ?? 0, 0);
+  assert.equal(summary.measuredSignalsUsed, 0);
+  assert.equal(summary.reportsCovered, 0);
+  assert.equal(summary.blockedArcs, 0);
+});
+
 test("planDispatch incorporates traffic road reports and order traffic delays", async () => {
   const depot = {
     id: "d0000000-0000-4000-8000-000000000001",

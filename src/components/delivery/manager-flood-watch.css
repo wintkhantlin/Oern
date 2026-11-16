@@ -12,7 +12,7 @@
 .flood-watch-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px 16px;
 }
@@ -24,6 +24,21 @@
   font-size: 16px;
   font-weight: 700;
   line-height: 24px;
+}
+
+.flood-watch-description {
+  margin: 2px 0 0;
+  color: var(--color-text-secondary-subtle);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.flood-live-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .flood-live {
@@ -43,6 +58,16 @@
   color: var(--color-brand-navy);
 }
 
+.flood-live span,
+.flood-live small {
+  font-variant-numeric: tabular-nums;
+}
+
+.flood-live small {
+  color: inherit;
+  font-size: 12px;
+}
+
 .flood-live[data-severity="light_rain"] {
   background: var(--color-info-surface);
 }
@@ -54,6 +79,38 @@
 .flood-live[data-severity="flood_risk"] {
   color: var(--color-error-text);
   background: var(--color-error-surface);
+}
+
+.flood-refresh {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  color: var(--color-brand-navy);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.flood-refresh:hover:not(:disabled) {
+  background: var(--color-surface-subtle);
+}
+
+.flood-refresh:focus-visible,
+.flood-zone-list button:focus-visible {
+  outline: 3px solid var(--color-info);
+  outline-offset: 2px;
+}
+
+.flood-refresh:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .flood-watch-body {
@@ -69,17 +126,145 @@
   gap: 10px;
 }
 
-.flood-map > svg {
+.flood-map figcaption {
+  display: grid;
+  gap: 10px;
+}
+
+.flood-caption-title {
+  color: var(--color-brand-navy);
+  font-size: 14px;
+}
+
+.flood-map-frame,
+.flood-map-fallback-wrap {
+  position: relative;
   width: 100%;
-  height: auto;
+  height: 380px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface-subtle);
 }
 
+.flood-mapbox {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.flood-mapbox.mapboxgl-map {
+  position: absolute;
+  inset: 0;
+}
+
+.flood-map-fallback-wrap {
+  display: grid;
+  place-items: center;
+}
+
+.flood-map-fallback-wrap:not(.is-immediate) {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.flood-map-fallback {
+  width: 100%;
+  height: 100%;
+}
+
+.flood-map-status {
+  position: absolute;
+  inset: auto 12px 12px;
+  z-index: 3;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary-subtle);
+  background: var(--color-surface);
+  font-size: 13px;
+}
+
+.flood-map-fit {
+  position: absolute;
+  z-index: 3;
+  top: 12px;
+  left: 12px;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  color: var(--color-brand-navy);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--rf-shadow-float);
+}
+
+.flood-map-fit:hover {
+  background: var(--color-surface-subtle);
+}
+
+.flood-map-fit:focus-visible,
+.flood-map-marker:focus-visible {
+  outline: 3px solid var(--color-info);
+  outline-offset: 2px;
+}
+
+.flood-map-marker {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.flood-map-marker::before {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+  background: var(--color-brand-navy);
+  box-shadow: 0 1px 3px rgb(23 43 77 / 0.35);
+}
+
+.flood-map-marker[data-kind="task"]::before {
+  border-radius: 3px;
+  background: var(--color-text-secondary);
+}
+
+.flood-map-marker[data-exposed]::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 2px solid var(--color-warning);
+  border-radius: 50%;
+}
+
+.flood-map-marker[data-class="3"]::after {
+  border-color: var(--color-error);
+}
+
+.flood-map-frame .mapboxgl-ctrl button {
+  width: 48px;
+  height: 48px;
+}
+
 .flood-zone {
-  --zone: var(--color-info);
+  --zone: var(--color-warning);
   fill: var(--zone);
-  fill-opacity: 0.22;
+  fill-opacity: 0.18;
   stroke: var(--zone);
   stroke-width: 1.5;
   stroke-linejoin: round;
@@ -88,7 +273,7 @@
 
 .flood-zone[data-class="2"] {
   --zone: var(--color-warning);
-  fill-opacity: 0.3;
+  fill-opacity: 0.34;
 }
 
 .flood-zone[data-class="3"] {
@@ -108,13 +293,17 @@
 }
 
 .flood-point[data-kind="task"] rect {
-  fill: var(--color-brand-orange);
+  fill: var(--color-text-secondary);
 }
 
 .flood-point .flood-point-ring {
   fill: none;
-  stroke: var(--color-error);
+  stroke: var(--color-warning);
   stroke-width: 2;
+}
+
+.flood-point[data-class="3"] .flood-point-ring {
+  stroke: var(--color-error);
 }
 
 .flood-legend {
@@ -139,16 +328,18 @@
   width: 12px;
   height: 12px;
   border-radius: 3px;
-  background: var(--color-info);
-  opacity: 0.6;
+  background: var(--color-warning);
+  opacity: 0.45;
 }
 
 .flood-legend li[data-class="2"]::before {
   background: var(--color-warning);
+  opacity: 0.85;
 }
 
 .flood-legend li[data-class="3"]::before {
   background: var(--color-error);
+  opacity: 0.75;
 }
 
 .flood-legend-point circle {
@@ -156,7 +347,71 @@
 }
 
 .flood-legend-point[data-kind="task"] rect {
-  fill: var(--color-brand-orange);
+  fill: var(--color-text-secondary);
+}
+
+.flood-zone-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.flood-zone-list button {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-brand-navy);
+  background: var(--color-surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.flood-zone-list button:hover,
+.flood-zone-list button[aria-pressed="true"] {
+  background: var(--color-warning-surface);
+}
+
+.flood-zone-list button[data-class="2"] {
+  border-color: var(--color-warning);
+}
+
+.flood-zone-list button[data-class="3"] {
+  border-color: var(--color-error-border);
+}
+
+.flood-zone-list button[data-class="3"]:hover,
+.flood-zone-list button[data-class="3"][aria-pressed="true"] {
+  background: var(--color-error-surface);
+}
+
+.flood-zone-list button span {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.flood-zone-list button small {
+  flex: 0 0 auto;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.flood-map-empty {
+  margin: 0;
+  color: var(--color-text-secondary-subtle);
+  font-size: 13px;
 }
 
 .flood-zone-readout {
@@ -194,7 +449,7 @@
 .flood-exposure li svg {
   flex: 0 0 auto;
   margin-top: 2px;
-  color: var(--color-info);
+  color: var(--color-warning-text);
 }
 
 .flood-exposure li[data-class="2"] svg {
@@ -211,6 +466,20 @@
   gap: 2px;
 }
 
+.flood-exposure li span span,
+.flood-exposure li small {
+  line-height: 18px;
+}
+
+.flood-exposure li span span {
+  font-variant-numeric: tabular-nums;
+}
+
+.flood-exposure li small {
+  color: var(--color-text-secondary-subtle);
+  font-size: 12px;
+}
+
 .flood-exposure li strong {
   color: var(--color-brand-navy);
   font-size: 14px;
@@ -224,30 +493,14 @@
   text-wrap: pretty;
 }
 
-/* Inline marker on a request or task that sits in a mapped zone. */
-.flood-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  justify-self: start;
-  max-width: 100%;
-  padding: 2px 8px;
-  border-radius: 999px;
-  color: var(--color-info-text);
-  background: var(--color-info-surface);
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 600;
-}
-
-.flood-chip[data-class="2"] {
+.flood-exposure .flood-unmapped-note {
+  padding: 10px 12px;
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-md);
   color: var(--color-warning-text);
   background: var(--color-warning-surface);
-}
-
-.flood-chip[data-class="3"] {
-  color: var(--color-error-text);
-  background: var(--color-error-surface);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 900px) {
@@ -259,5 +512,24 @@
 @media (max-width: 640px) {
   .flood-watch {
     padding: 14px;
+  }
+
+  .flood-live-group,
+  .flood-live,
+  .flood-refresh {
+    width: 100%;
+  }
+
+  .flood-live-group {
+    justify-content: stretch;
+  }
+
+  .flood-zone-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .flood-map-frame,
+  .flood-map-fallback-wrap {
+    height: 320px;
   }
 }

@@ -5061,6 +5061,18 @@ summary:focus-visible {
   resize: vertical;
 }
 
+.operations-more {
+  display: grid;
+  gap: 12px;
+}
+
+.operations-more > summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
 .operations-form-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

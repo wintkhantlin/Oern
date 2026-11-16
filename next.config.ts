@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
   // e2e tests run a second dev server on port 3100 while `next dev` may
   // already be running; each server needs its own lockfile, which lives in
   // the dist dir.
+  // The OSM routing graph is read from disk at runtime, so ship it with the
+  // dispatch functions.
+  outputFileTracingIncludes: {
+    "/api/dispatch/plan": ["./data/generated/yangon-road-graph.json"],
+    "/api/dispatch/sources": ["./data/generated/yangon-road-graph.json"],
+  },
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   turbopack: {
     rules: {

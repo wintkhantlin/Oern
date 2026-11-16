@@ -1,4 +1,9 @@
-/* Job board inside the manager shell: requests → queue → jobs, read left to right.
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: brand · redesign: restyle
+ * paper: oklch(98.4% 0.003 248) · accent: oklch(52% 0.17 40) · display: Inter · body: Inter
+ * nav: dark top bar with a light collapsible side navigation · signature: the resource table, its filters kept in the URL · states: loading, empty, error, unauthorized
+ * axes: light/grotesk-sans/warm · posture: app · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: R, the orange marks selection and the primary action only */
+/* Job status board inside the manager shell.
    Scoped to .jobs-app so the legacy operations styles stay untouched. */
 
 .jobs-app .manager-content {
@@ -21,8 +26,8 @@
 .jobs-stage {
   min-width: 0;
   display: grid;
-  gap: 14px;
-  padding: 18px;
+  gap: 16px;
+  padding: 16px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -33,7 +38,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px 12px;
+  gap: 8px 12px;
   min-height: 44px;
 }
 
@@ -46,13 +51,6 @@
   font-size: 16px;
   font-weight: 700;
   line-height: 24px;
-}
-
-.jobs-stage-head h2 span {
-  color: var(--color-text-secondary-subtle);
-  font-size: 14px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 
 .jobs-actions,
@@ -89,21 +87,11 @@
 .jobs-empty {
   display: grid;
   justify-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 24px 16px;
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
   text-align: center;
-}
-
-.jobs-empty-icon {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: var(--color-brand-navy);
-  background: var(--color-surface-subtle);
 }
 
 .jobs-empty p {
@@ -119,8 +107,8 @@
 .jobs-app .jobs-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 8px;
+  padding: 4px 8px;
   border-radius: 999px;
   color: var(--color-text-secondary);
   background: var(--color-surface-subtle);
@@ -134,15 +122,14 @@
   background: currentColor;
 }
 
-.jobs-app .jobs-status[data-status="open"] {
-  color: var(--color-info-text);
-  background: var(--color-info-surface);
-}
-
-.jobs-app .jobs-status[data-status="claimed"],
-.jobs-app .jobs-status[data-status="in_progress"] {
+.jobs-app .jobs-status[data-status="claimed"] {
   color: var(--color-warning-text);
   background: var(--color-warning-surface);
+}
+
+.jobs-app .jobs-status[data-status="in_progress"] {
+  color: var(--color-info-text);
+  background: var(--color-info-surface);
 }
 
 .jobs-app .jobs-status[data-status="completed"] {
@@ -151,10 +138,6 @@
 }
 
 @media (max-width: 900px) {
-  .jobs-board-columns {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .jobs-pipeline {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -174,7 +157,7 @@
 
 @media (max-width: 640px) {
   .jobs-stage {
-    padding: 14px;
+    padding: 16px;
   }
 
   .jobs-actions {
@@ -189,8 +172,8 @@
 /* Task status board */
 .jobs-board {
   display: grid;
-  gap: 14px;
-  padding: 18px;
+  gap: 16px;
+  padding: 16px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -208,12 +191,18 @@
   }
 }
 
+@media (max-width: 900px) {
+  .jobs-board-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .jobs-board-column {
   min-width: 0;
   display: grid;
   align-content: start;
   gap: 8px;
-  padding: 10px;
+  padding: 8px;
   border-radius: var(--radius-md);
   background: var(--color-surface-subtle);
 }
@@ -236,14 +225,8 @@
   background: var(--col-color, var(--color-text-secondary-subtle));
 }
 
-.jobs-board-column h3 span {
-  margin-left: auto;
-  color: var(--color-text-secondary-subtle);
-  font-variant-numeric: tabular-nums;
-}
-
 .jobs-board-column[data-status="open"] {
-  --col-color: var(--color-info);
+  --col-color: var(--color-text-secondary);
 }
 
 .jobs-board-column[data-status="claimed"] {
@@ -251,7 +234,7 @@
 }
 
 .jobs-board-column[data-status="in_progress"] {
-  --col-color: var(--color-brand-orange);
+  --col-color: var(--color-info);
 }
 
 .jobs-board-column[data-status="completed"] {
@@ -268,8 +251,8 @@
 
 .task-card {
   display: grid;
-  gap: 3px;
-  padding: 10px 12px;
+  gap: 4px;
+  padding: 8px 12px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -287,12 +270,12 @@
 
 .task-card .button {
   justify-self: start;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .jobs-board-empty {
   margin: 0;
-  padding: 10px 4px;
+  padding: 8px 4px;
   color: var(--color-text-secondary-subtle);
   font-size: 13px;
 }
@@ -306,14 +289,13 @@
   overflow: hidden;
   border: 1px solid var(--aws-border);
   border-radius: 16px;
-  box-shadow: 0 1px 1px rgba(0, 28, 36, 0.2), 0 1px 4px rgba(0, 28, 36, 0.08);
 }
 
 .manager-app.jobs-app .jobs-stage-head {
   min-height: 0;
-  padding: 14px 20px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--aws-border);
-  background: #fafafa;
+  background: var(--color-surface-subtle);
 }
 
 .manager-app.jobs-app .jobs-stage-head h2 {
@@ -322,16 +304,6 @@
 }
 
 /* Count as a visible badge instead of faint grey text. */
-.manager-app.jobs-app .jobs-stage-head h2 span {
-  min-width: 24px;
-  padding: 1px 9px;
-  border-radius: 12px;
-  background: #0972d3;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  text-align: center;
-}
 
 .manager-app.jobs-app .jobs-stage > :not(.jobs-stage-head),
 .manager-app.jobs-app .jobs-board > :not(.jobs-stage-head) {
@@ -344,20 +316,20 @@
 
 .manager-app.jobs-app .operations-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .manager-app.jobs-app .operations-list-item,
 .manager-app.jobs-app .task-card {
   border: 1px solid var(--aws-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .manager-app.jobs-app .operations-list-item:hover,
 .manager-app.jobs-app .task-card:hover {
-  border-color: #0972d3;
-  box-shadow: 0 0 0 1px #0972d3;
+  border-color: var(--color-info-text);
+  box-shadow: 0 0 0 1px var(--color-info-text);
 }
 
 .manager-app.jobs-app .operations-list-item > div strong {
@@ -369,43 +341,13 @@
   color: var(--aws-text);
 }
 
-/* Buttons: pill shape, compact height, clear primary / secondary / dark. */
-.manager-app.jobs-app .button {
-  min-height: 32px;
-  padding: 0 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.manager-app.jobs-app .button-outline {
-  border: 2px solid #0972d3;
-  color: #0972d3;
-  background: #fff;
-}
-
-.manager-app.jobs-app .button-outline:hover {
-  background: #f1faff;
-  color: #033160;
-}
-
-.manager-app.jobs-app .button-dark {
-  background: #0972d3;
-  border-color: #0972d3;
-}
-
-.manager-app.jobs-app .button-dark:hover {
-  background: #033160;
-  border-color: #033160;
-}
-
 .manager-app.jobs-app .jobs-empty {
-  border: 2px dashed #aab7b8;
+  border: 2px dashed var(--console-navy-muted);
   border-radius: 8px;
-  background: #fafafa;
+  background: var(--color-surface-subtle);
 }
 
-/* Status board: coloured top rule per column, bold readable status. */
+/* Status board: column colour is carried by the heading dot. */
 .manager-app.jobs-app .jobs-board-columns {
   gap: 16px;
 }
@@ -413,9 +355,8 @@
 .manager-app.jobs-app .jobs-board-column {
   padding: 12px;
   border: 1px solid var(--aws-border);
-  border-top: 4px solid var(--col-color, #5f6b7a);
   border-radius: 8px;
-  background: #f9fafa;
+  background: var(--color-surface-subtle);
 }
 
 .manager-app.jobs-app .jobs-board-column h3 {
@@ -423,16 +364,8 @@
   font-size: 14px;
 }
 
-.manager-app.jobs-app .jobs-board-column h3 span {
-  padding: 0 8px;
-  border-radius: 10px;
-  background: #fff;
-  border: 1px solid var(--aws-border);
-  color: var(--aws-text);
-}
-
 .manager-app.jobs-app .jobs-status {
-  padding: 3px 10px;
+  padding: 4px 8px;
   border: 1px solid currentColor;
   border-radius: 12px;
   font-size: 12px;
@@ -442,4 +375,8 @@
 .manager-app.jobs-app .jobs-board-empty {
   color: var(--aws-muted);
   font-size: 13px;
+}
+
+.task-card .button:active:not(:disabled) {
+  color: var(--console-info-deep);
 }

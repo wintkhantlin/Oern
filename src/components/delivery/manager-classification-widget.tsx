@@ -30,15 +30,15 @@ export function ManagerClassificationWidget() {
       const classResult = await classifyComplaint(input);
       setResult(classResult);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Classification failed"
-      );
+      setError(err instanceof Error ? err.message : "Classification failed");
     } finally {
       setLoading(false);
     }
   };
 
-  const getPriorityTone = (priority: string): "error" | "warning" | "info" | "success" => {
+  const getPriorityTone = (
+    priority: string,
+  ): "error" | "warning" | "info" | "success" => {
     switch (priority) {
       case "P1":
         return "error";
@@ -111,9 +111,7 @@ export function ManagerClassificationWidget() {
             maxLength={2000}
             rows={4}
           />
-          <div className="mcw-helper">
-            {input.length} / 2000 characters
-          </div>
+          <div className="mcw-helper">{input.length} / 2000 characters</div>
         </div>
 
         {/* Classify Button */}
@@ -235,9 +233,7 @@ export function ManagerClassificationWidget() {
                         }}
                       />
                     </div>
-                    <span>
-                      {(result.categoryConfidence * 100).toFixed(0)}%
-                    </span>
+                    <span>{(result.categoryConfidence * 100).toFixed(0)}%</span>
                   </div>
                 </div>
               )}

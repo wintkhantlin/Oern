@@ -1,5 +1,10 @@
 import { distanceToSegmentKm } from "../energy-routing.ts";
-import { signalDelayMin } from "../signal-index.ts";
+import {
+  buildSignalIndex,
+  type SignalNode,
+  signalDelayMin,
+  signalsAlongPath,
+} from "../signal-index.ts";
 import { createGraph, type Graph } from "./graph.ts";
 
 export type TrafficSignalLike = {
@@ -45,40 +50,79 @@ export function edgeSignalDelayMinutes(
  * Return a copy of `graph` with red-light wait time folded into edge weights.
  * Does not mutate the input graph and is idempotent: edges already carrying
  * traffic-signal delay are not adjusted again.
+ *
+ * Each signal is charged once, to the physical road segment it is closest to
+ * (both directions of that segment carry the delay), so a light beside a
+ * shared node is not added to every adjoining edge. Weights are metres that
+ * the matrix later turns into minutes at `speedKmh` times `timeScale`
+ * (truckTimeFactor x trafficMultiplier); pass that same `timeScale` so the
+ * delay is not inflated by it a second time.
  */
 export function applyTrafficSignals(
   graph: Graph,
   signals: readonly TrafficSignalLike[],
   speedKmh: number,
   radiusKm = 0.045,
+  timeScale = 1,
 ): Graph {
-  const kmPerMinute = speedKmh / 60;
+  const metresPerMinute = ((speedKmh / 60) * 1000) / (timeScale || 1);
   const result = createGraph(
     graph.nodeCount,
     graph.coordinates ? [...graph.coordinates] : undefined,
   );
+
+  // Physical segments: twin directed edges share one geometry array.
+  type Entry = { u: number; i: number };
+  const groups = new Map<object, Entry[]>();
+  for (let u = 0; u < graph.nodeCount; u++) {
+    graph.adjacency[u].forEach((edge, i) => {
+      if (edge.trafficSignalsApplied) return;
+      if (!edge.coordinates || edge.coordinates.length < 2) return;
+      const group = groups.get(edge.coordinates);
+      if (group) group.push({ u, i });
+      else groups.set(edge.coordinates, [{ u, i }]);
+    });
+  }
+  const nodes: SignalNode[] = signals.map((signal, i) => ({
+    id: String(i),
+    name: String(i),
+    latitude: signal.latitude,
+    longitude: signal.longitude,
+    estimatedCycleSeconds: signal.estimatedCycleSeconds,
+  }));
+  const index = buildSignalIndex(nodes);
+  const owner = new Map<number, { group: object; km: number }>();
+  for (const [coords] of groups) {
+    const path = (coords as readonly { latitude: number; longitude: number }[]).map(
+      (c) => [c.longitude, c.latitude] as const,
+    );
+    for (const hit of signalsAlongPath(index, path, radiusKm)) {
+      const id = Number(hit.node.id);
+      const known = owner.get(id);
+      if (!known || hit.distanceKm < known.km)
+        owner.set(id, { group: coords, km: hit.distanceKm });
+    }
+  }
+  const delayOf = new Map<object, number>();
+  for (const [id, { group }] of owner)
+    delayOf.set(
+      group,
+      (delayOf.get(group) ?? 0) + signalDelayMin(signals[id].estimatedCycleSeconds),
+    );
+
   for (let u = 0; u < graph.nodeCount; u++) {
     result.adjacency[u] = graph.adjacency[u].map((edge) => {
       if (edge.trafficSignalsApplied) return { ...edge };
-      const delayMinutes = edgeSignalDelayMinutes(edge, signals, radiusKm);
-      const weight =
-        delayMinutes > 0
-          ? edge.weight + delayMinutes * kmPerMinute * 1000
-          : edge.weight;
+      const delayMinutes = edge.coordinates
+        ? (delayOf.get(edge.coordinates) ?? 0)
+        : 0;
+      // Mark applied even when no delay, so repeated calls stay idempotent.
       return {
         ...edge,
-        weight,
-        trafficSignalsApplied:
-          delayMinutes > 0 ? true : edge.trafficSignalsApplied,
+        weight: edge.weight + delayMinutes * metresPerMinute,
+        trafficSignalsApplied: true,
       };
     });
-  }
-  // Mark applied even when no delay, so repeated calls stay idempotent.
-  for (let u = 0; u < graph.nodeCount; u++) {
-    result.adjacency[u] = result.adjacency[u].map((edge) => ({
-      ...edge,
-      trafficSignalsApplied: true,
-    }));
   }
   return result;
 }

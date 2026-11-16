@@ -1,0 +1,22 @@
+# Dependencies and local caches
+node_modules
+**/node_modules
+.next
+.next-e2e
+.next-profile
+remotion-demo
+.git
+.vercel
+
+# Test, tooling, and generated output
+coverage
+test-results
+playwright-report
+output
+.playwright-cli
+*.tsbuildinfo
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example

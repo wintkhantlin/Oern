@@ -424,13 +424,12 @@ function OsmLocationMap({
                 </span>
               </button>
             )}
-            <div
-              className={`map-live-pill ${liveRiderCount && !isDemo ? "is-connected" : ""}`}
-            >
-              <span className="live-dot" />
-              {isDemo
-                ? "Simulated tracking"
-                : mode === "manager" && liveRiderCount
+            {!isDemo && (
+              <div
+                className={`map-live-pill ${liveRiderCount && !isDemo ? "is-connected" : ""}`}
+              >
+                <span className="live-dot" />
+                {mode === "manager" && liveRiderCount
                   ? `${liveRiderCount} ${liveRiderCount === 1 ? "rider" : "riders"} live`
                   : mode !== "manager" &&
                       parcelLocationState(order, now) === "closed"
@@ -442,7 +441,8 @@ function OsmLocationMap({
                           ? "Refreshing"
                           : "Last known location"
                         : "Location pending"}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}

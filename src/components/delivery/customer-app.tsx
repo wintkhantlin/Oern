@@ -18,7 +18,6 @@ import {
   CodSheet,
   CustomerHeader,
   CustomerHome,
-  DemoChip,
   HelpSheet,
   HomeSkeleton,
   NotificationsPage,
@@ -114,7 +113,6 @@ export function CustomerApp({ view }: { view: CustomerView }) {
   const router = useRouter();
   const [sheet, setSheet] = useState<"help" | "scan" | "cod" | null>(null);
   const [readState, setReadState] = useState<ReadState | null>(null);
-  const [demoDismissed, setDemoDismissed] = useState(false);
   const [lookupMiss, setLookupMiss] = useState<string | null>(null);
   const [publicHit, setPublicHit] = useState<PublicTracking | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -218,16 +216,6 @@ export function CustomerApp({ view }: { view: CustomerView }) {
       "",
       `${window.location.pathname}${query ? `?${query}` : ""}`,
     );
-  }, []);
-
-  useEffect(() => {
-    try {
-      setDemoDismissed(
-        window.sessionStorage.getItem("oern.demo-notice.dismissed") === "1",
-      );
-    } catch {
-      // Storage can be blocked; the notice simply stays visible.
-    }
   }, []);
 
   /**
@@ -357,15 +345,6 @@ export function CustomerApp({ view }: { view: CustomerView }) {
     publicHit?.order.tracking_code,
   ]);
 
-  function dismissDemo() {
-    setDemoDismissed(true);
-    try {
-      window.sessionStorage.setItem("oern.demo-notice.dismissed", "1");
-    } catch {
-      // Nothing to persist.
-    }
-  }
-
   const handleScanned = useCallback(
     (code: string) => {
       setSheet(null);
@@ -483,10 +462,6 @@ export function CustomerApp({ view }: { view: CustomerView }) {
           ) : undefined
         }
       />
-
-      {workspace.isDemo &&
-        (view === "orders" || (view === "track" && !publicHit)) &&
-        !demoDismissed && <DemoChip onDismiss={dismissDemo} />}
 
       {workspace.error && (
         <div className="error-notice shell-width" role="alert">

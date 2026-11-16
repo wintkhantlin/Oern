@@ -1,17 +1,20 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: brand · redesign: restyle
+ * paper: oklch(98.4% 0.003 248) · accent: oklch(52% 0.17 40) · display: Inter · body: Inter
+ * nav: dark top bar with a light collapsible side navigation · signature: the resource table, its filters kept in the URL · states: loading, empty, error, unauthorized
+ * axes: light/grotesk-sans/warm · posture: app · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: R, the orange marks selection and the primary action only */
 /* AWS console style for the manager workspace: flat, dense, square, orange primary.
    Loaded last and scoped to .manager-app so rider and customer apps are untouched. */
 .manager-app {
-  --aws-nav: #161d26;
-  --aws-nav-hover: #232f3e;
-  --aws-bg: #f2f3f3;
-  --aws-border: #d5dbdb;
-  --aws-text: #16191f;
-  --aws-muted: #5f6b7a;
-  --aws-link: #0972d3;
-  --aws-orange: #ec7211;
-  --aws-orange-hover: #eb5f07;
-  --color-background: var(--aws-bg);
-  --radius-md: 2px;
+  --aws-nav: var(--color-brand-navy);
+  --aws-nav-hover: var(--console-navy-hover);
+  --aws-bg: var(--color-background);
+  --aws-border: var(--color-border);
+  --aws-text: var(--color-text-primary);
+  --aws-muted: var(--color-text-secondary);
+  --aws-link: var(--color-info-text);
+  --aws-orange: var(--color-brand-orange-action);
+  --aws-orange-hover: var(--color-brand-orange-action-hover);
   background: var(--aws-bg);
   color: var(--aws-text);
 }
@@ -24,36 +27,35 @@
 /* Side navigation: dark, flat, orange active rail */
 .manager-app .manager-sidebar {
   background: var(--aws-nav);
-  border-right: 1px solid #000;
+  border-right: 1px solid var(--color-text-primary);
 }
 .manager-app .manager-sidebar-label {
-  color: #8d99a8;
+  color: var(--color-border-control);
   font-size: 11px;
-  letter-spacing: 0.06em;
 }
 .manager-app .manager-side-nav a {
   border-radius: 0;
-  color: #d1d5db;
+  color: var(--color-border);
   font-size: 14px;
-  padding: 8px 14px;
+  padding: 8px 16px;
   border-left: 3px solid transparent;
   background: transparent;
   box-shadow: none;
 }
 .manager-app .manager-side-nav a:hover {
   background: var(--aws-nav-hover);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 .manager-app .manager-side-nav a.side-nav-active {
   background: var(--aws-nav-hover);
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 700;
   border-left-color: var(--aws-orange);
 }
 .manager-app .manager-side-nav a span {
-  border-radius: 2px;
-  background: #354150;
-  color: #fff;
+  border-radius: var(--radius-sm);
+  background: var(--color-text-secondary-subtle);
+  color: var(--color-text-inverse);
 }
 
 /* Top bar */
@@ -62,8 +64,8 @@
   min-height: calc(64px + env(safe-area-inset-top));
   padding: calc(env(safe-area-inset-top) + 8px) 16px 8px;
   background: var(--aws-nav-hover);
-  border-bottom: 1px solid #000;
-  color: #d1d5db;
+  border-bottom: 1px solid var(--color-text-primary);
+  color: var(--color-border);
 }
 @media (min-width: 1024px) {
   .manager-app .manager-topbar {
@@ -79,20 +81,20 @@
 }
 
 .manager-app .manager-topbar .manager-date {
-  color: #aab4c0;
+  color: var(--color-border-control);
   font-size: 12px;
 }
 .manager-app .manager-topbar .icon-button,
 .manager-app .manager-topbar .button {
   background: transparent;
-  color: #fff;
-  border: 1px solid #8d99a8;
-  border-radius: 2px;
+  color: var(--color-text-inverse);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-sm);
   box-shadow: none;
 }
 .manager-app .manager-topbar .icon-button:hover,
 .manager-app .manager-topbar .button:hover {
-  background: #354150;
+  background: var(--color-text-secondary-subtle);
 }
 
 /* Page header: AWS "Title + description" block */
@@ -119,17 +121,17 @@
 .manager-app .manager-profile-card,
 .manager-app .manager-order-panel-paper,
 .manager-app .manager-order-map-paper {
-  background: #fff !important;
+  background: var(--color-surface) !important;
   border: 1px solid var(--aws-border) !important;
-  border-radius: 2px !important;
-  box-shadow: 0 1px 1px rgba(0, 28, 36, 0.3), 1px 1px 1px rgba(0, 28, 36, 0.15),
-    -1px 1px 1px rgba(0, 28, 36, 0.15) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: 0 1px 1px color-mix(in srgb, var(--color-brand-navy) 30%, transparent), 1px 1px 1px color-mix(in srgb, var(--color-brand-navy) 15%, transparent),
+    -1px 1px 1px color-mix(in srgb, var(--color-brand-navy) 15%, transparent) !important;
 }
 .manager-app .dash-card-header,
 .manager-app .panel-heading-row,
 .manager-app .road-knowledge-heading {
   border-bottom: 1px solid var(--aws-border);
-  background: #fff;
+  background: var(--color-surface);
 }
 .manager-app .dash-card-header h2,
 .manager-app .panel-heading-row h2,
@@ -141,8 +143,6 @@
 .manager-app .section-kicker {
   color: var(--aws-muted);
   font-size: 12px;
-  letter-spacing: 0.04em;
-  text-transform: none;
 }
 .manager-app .dash-link,
 .manager-app .road-knowledge-intro a {
@@ -155,37 +155,37 @@
 
 /* Buttons */
 .manager-app .button {
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   font-weight: 700;
   box-shadow: none;
 }
 .manager-app .button-primary {
   background: var(--aws-orange);
   border: 1px solid var(--aws-orange);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 .manager-app .button-primary:hover {
   background: var(--aws-orange-hover);
   border-color: var(--aws-orange-hover);
 }
 .manager-app .button-outline {
-  background: #fff;
-  border: 1px solid #545b64;
-  color: #545b64;
+  background: var(--color-surface);
+  border: 1px solid var(--color-text-secondary);
+  color: var(--color-text-secondary);
 }
 .manager-app .button-outline:hover {
-  background: #f2f3f3;
+  background: var(--color-background);
   color: var(--aws-text);
 }
 .manager-app .button-dark {
-  background: #232f3e;
-  border-color: #232f3e;
-  color: #fff;
+  background: var(--console-navy-hover);
+  border-color: var(--console-navy-hover);
+  color: var(--color-text-inverse);
 }
 
 /* KPI strip: AWS "key metrics" with dividers instead of colour fills */
 .manager-app .dash-kpi-grid > * {
-  background: #fff !important;
+  background: var(--color-surface) !important;
   border-radius: 0 !important;
   border-right: 1px solid var(--aws-border);
 }
@@ -198,27 +198,27 @@
 .manager-app .dash-exception-list li.is-critical,
 .manager-app .dash-exception-list li.is-warning,
 .manager-app .dash-exception-list li.is-info {
-  border-radius: 2px;
-  background: #fff;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
   border: 1px solid var(--aws-border);
   border-left-width: 4px;
 }
 .manager-app .dash-exception-list li.is-critical {
-  border-left-color: #d13212;
+  border-left-color: var(--color-error-text);
 }
 .manager-app .dash-exception-list li.is-warning {
-  border-left-color: #f89256;
+  border-left-color: var(--color-brand-orange);
 }
 .manager-app .dash-exception-list li.is-info {
   border-left-color: var(--aws-link);
 }
 .manager-app .dash-exception-list li:hover {
-  background: #f9fafa;
+  background: var(--color-surface-subtle);
 }
 
 /* Tables */
 .manager-app .dash-table th {
-  background: #fafafa;
+  background: var(--color-surface-subtle);
   color: var(--aws-muted);
   font-size: 12px;
   font-weight: 700;
@@ -227,10 +227,10 @@
   border-bottom: 1px solid var(--aws-border);
 }
 .manager-app .dash-table td {
-  border-bottom: 1px solid #eaeded;
+  border-bottom: 1px solid var(--color-border);
 }
 .manager-app .dash-table-row:hover {
-  background: #f1faff;
+  background: var(--console-info-wash);
 }
 .manager-app .dash-cell-main a {
   color: var(--aws-link);
@@ -241,7 +241,7 @@
 .manager-app .manager-live-tag,
 .manager-app .dash-pill-alert,
 .manager-app .dash-pill-clear {
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 
 /* Track page list rows and order queue cards */
@@ -250,34 +250,35 @@
   border-radius: 0;
 }
 .manager-app .manager-order-row.is-selected {
-  background: #f1faff;
+  background: var(--console-info-wash);
   box-shadow: inset 3px 0 0 var(--aws-link);
 }
 .manager-app .manager-queue-card {
-  border-radius: 2px !important;
+  border-radius: var(--radius-sm) !important;
 }
 .manager-app .manager-queue-card.is-selected {
   border: 1px solid var(--aws-link) !important;
   box-shadow: inset 3px 0 0 var(--aws-link) !important;
-  background: #f1faff !important;
+  background: var(--console-info-wash) !important;
 }
 .manager-app .MuiChip-root {
-  border-radius: 2px !important;
+  border-radius: var(--radius-sm) !important;
 }
 
 /* Demo and error banners */
 .manager-app .workspace-demo {
-  border-radius: 2px;
-  border-left: 4px solid var(--aws-link);
-  background: #f1faff;
-  border-color: #b0d7f2;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-info-border);
+  border-radius: var(--radius-sm);
+  background: var(--console-info-wash);
+  border-color: var(--color-info-border);
 }
 
 /* Page-specific overrides in manager-order-view.css reset the top bar; keep it dark. */
 .manager-app:has(.manager-order-view-container) .manager-topbar,
 .manager-app .manager-topbar {
   background-color: var(--aws-nav-hover);
-  border-bottom: 1px solid #000;
+  border-bottom: 1px solid var(--color-text-primary);
 }
 .manager-app:has(.manager-order-view-container),
 .manager-app:has(.manager-order-view-container) .manager-main,
@@ -289,8 +290,8 @@
 .manager-app .manager-topbar .button,
 .manager-app .manager-topbar button {
   background: transparent !important;
-  color: #fff !important;
-  border-color: #8d99a8 !important;
+  color: var(--color-text-inverse) !important;
+  border-color: var(--color-border-control) !important;
 }
 
 .manager-app .manager-topbar,
@@ -301,7 +302,7 @@
 .manager-proof-photo {
   margin: 0;
   border: 1px solid var(--aws-border);
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 .manager-proof-photo img {
@@ -323,19 +324,19 @@
 .manager-app .flood-watch,
 .manager-app .vehicles-panel,
 .manager-app .vehicles-overview {
-  background: #fff;
+  background: var(--color-surface);
   border: 1px solid var(--aws-border);
-  border-radius: 2px;
-  box-shadow: 0 1px 1px rgba(0, 28, 36, 0.3), 1px 1px 1px rgba(0, 28, 36, 0.15),
-    -1px 1px 1px rgba(0, 28, 36, 0.15);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1px 1px color-mix(in srgb, var(--color-brand-navy) 30%, transparent), 1px 1px 1px color-mix(in srgb, var(--color-brand-navy) 15%, transparent),
+    -1px 1px 1px color-mix(in srgb, var(--color-brand-navy) 15%, transparent);
 }
 
 /* Form controls: square corners and a blue focus ring, as in the AWS console. */
 .manager-app input:not([type="checkbox"]):not([type="radio"]),
 .manager-app select,
 .manager-app textarea {
-  border-radius: 2px;
-  border-color: #8d99a8;
+  border-radius: var(--radius-sm);
+  border-color: var(--color-border-control);
 }
 .manager-app input:focus-visible,
 .manager-app select:focus-visible,
@@ -356,8 +357,8 @@
 .manager-app .manager-topbar-brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  color: #fff;
+  gap: 8px;
+  color: var(--color-text-inverse);
   font-size: 16px;
   font-weight: 700;
   white-space: nowrap;
@@ -367,16 +368,16 @@
   place-items: center;
   width: 24px;
   height: 24px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--aws-orange);
-  color: #161d26;
+  color: var(--color-brand-navy);
   font-size: 14px;
   font-weight: 800;
 }
 .manager-app .manager-topbar-brand small {
-  padding-left: 10px;
-  border-left: 1px solid #5f6b7a;
-  color: #aab4c0;
+  padding-left: 8px;
+  border-left: 1px solid var(--color-text-secondary);
+  color: var(--color-border-control);
   font-size: 13px;
   font-weight: 400;
 }
@@ -405,7 +406,7 @@
 .manager-app .manager-breadcrumbs li + li::before {
   content: "›";
   margin: 0 8px;
-  color: #8d99a8;
+  color: var(--color-border-control);
 }
 .manager-app .manager-breadcrumbs a {
   color: var(--aws-link);
@@ -414,7 +415,7 @@
   text-decoration: underline;
 }
 .manager-app .dash-page-header > .button {
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   min-height: 32px;
 }
 @media (min-width: 1024px) {
@@ -491,9 +492,18 @@
 }
 
 .manager-app:is([data-view="home"], [data-view="business"]) .mh-card {
-  box-shadow: 0 1px 1px rgba(0, 28, 36, 0.2), 0 1px 4px rgba(0, 28, 36, 0.08);
+  box-shadow: 0 1px 1px color-mix(in srgb, var(--color-brand-navy) 20%, transparent), 0 1px 4px color-mix(in srgb, var(--color-brand-navy) 8%, transparent);
 }
 
 .manager-app:is([data-view="home"], [data-view="business"]) .mh-table-wrap {
   border-radius: 0 !important;
+}
+
+.manager-app .button-primary:active:not(:disabled) { background: var(--color-brand-orange-action-hover); }
+.manager-app .button-outline:active:not(:disabled) { background: var(--color-info-surface); }
+.manager-app .button-dark:active:not(:disabled) { background: var(--console-info-deep); }
+
+.manager-app .dash-page-header h1,
+.manager-app .dash-page-header h2 {
+  text-wrap: balance;
 }

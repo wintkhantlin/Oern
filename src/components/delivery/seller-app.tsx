@@ -5,7 +5,6 @@ import { type FormEvent, useMemo, useState } from "react";
 import { AuthDialog } from "@/components/delivery/auth-dialog";
 import {
   ActionToast,
-  DemoBadge,
   LoadingBlock,
   MobileNav,
   PageHeader,
@@ -26,12 +25,6 @@ import { createClient } from "@/lib/supabase/client";
 
 const sellerNavItems = [
   {
-    id: "seller-overview",
-    label: "Overview",
-    href: "#seller-overview",
-    icon: "history",
-  },
-  {
     id: "seller-orders",
     label: "Orders",
     href: "#seller-orders",
@@ -43,19 +36,13 @@ const sellerNavItems = [
     href: "#seller-channels",
     icon: "settings",
   },
-  {
-    id: "seller-import",
-    label: "Import",
-    href: "#seller-import",
-    icon: "plus",
-  },
 ] as const;
 
 const BEFORE_TRANSIT = ["pending", "accepted", "picked_up"];
 
 function previewOrLoadingNotice(isDemo: boolean) {
   return isDemo
-    ? "Preview mode: sign in with a seller account to save this change."
+    ? "Sign in with a seller account to save this change."
     : "Your seller account is still loading. Try again in a moment.";
 }
 
@@ -205,21 +192,12 @@ export function SellerApp() {
         </div>
       </header>
 
-      <div className="operations-shell" id="seller-overview">
+      <div className="operations-shell">
         <PageHeader
           title="Deliveries"
           description="Request Oern deliveries and follow orders from connected channels in one queue."
         />
 
-        {workspace.isDemo && (
-          <div className="workspace-demo">
-            <DemoBadge>Seller preview</DemoBadge>
-            <span>
-              Forms and shipment changes are illustrative until a seller account
-              signs in.
-            </span>
-          </div>
-        )}
         {workspace.error && (
           <div className="error-notice" role="alert">
             {workspace.error}
@@ -439,23 +417,28 @@ export function SellerApp() {
                         spellCheck={false}
                       />
                     </label>
+                  </div>
+                  <details className="operations-more">
+                    <summary>
+                      Add reference, origin, destination or tracking link
+                    </summary>
                     <label>
                       Order reference
                       <input name="reference" />
                     </label>
-                  </div>
-                  <label>
-                    Origin
-                    <input name="origin" />
-                  </label>
-                  <label>
-                    Destination
-                    <input name="destination" />
-                  </label>
-                  <label>
-                    Carrier tracking URL
-                    <input name="trackingUrl" type="url" />
-                  </label>
+                    <label>
+                      Origin
+                      <input name="origin" />
+                    </label>
+                    <label>
+                      Destination
+                      <input name="destination" />
+                    </label>
+                    <label>
+                      Carrier tracking URL
+                      <input name="trackingUrl" type="url" />
+                    </label>
+                  </details>
                   <button
                     className="button button-primary"
                     type="submit"

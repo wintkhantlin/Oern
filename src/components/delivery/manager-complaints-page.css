@@ -1,13 +1,6 @@
 /* Manager Complaints Page - Uses Oern design system (dispatch-navy, kiln-orange, light canvas) */
 
-.manager-app.manager-complaints-page {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  grid-template-rows: auto 1fr;
-  min-height: 100vh;
-  gap: 0;
-  background-color: var(--color-canvas, #f8fafc);
-}
+/* Layout comes from the console shell. */
 
 /* Tab Navigation - Oern style tabs in manager topbar */
 .manager-app .manager-topbar.manager-complaints-topbar {
@@ -62,13 +55,6 @@
 }
 
 /* Content area using Oern canvas color */
-.manager-app.manager-complaints-page .manager-content {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-  background-color: var(--color-canvas, #f8fafc);
-}
 
 /* View Container */
 .manager-complaints-view {
@@ -170,13 +156,7 @@
 
 /* Tablet and Mobile Responsive */
 @media (max-width: 1024px) {
-  .manager-app.manager-complaints-page {
-    grid-template-columns: 1fr;
-  }
 
-  .manager-app.manager-complaints-page .manager-sidebar {
-    display: none;
-  }
 
   .manager-topbar .manager-complaints-tab {
     padding: 10px 12px;

@@ -7,6 +7,7 @@ import "./manager-home-simple.css";
 import "./manager-business.css";
 import { Icon } from "@/components/delivery/icons";
 import { PaymentLogo } from "@/components/delivery/payment-logos";
+import { calculateBusinessIntelligence } from "@/lib/delivery/business-intelligence";
 import {
   type BusinessProfile,
   emptyBusinessProfile,
@@ -28,7 +29,7 @@ import {
   orderPaymentMethod,
   PAYMENT_METHODS,
 } from "@/lib/delivery/payment-methods";
-import type { DeliveryOrder } from "@/lib/delivery/types";
+import type { DeliveryOrder, StatusEvent } from "@/lib/delivery/types";
 import { createClient } from "@/lib/supabase/client";
 
 const RULE_ROWS = [
@@ -65,9 +66,11 @@ function Panel({
 
 export function ManagerBusiness({
   orders,
+  statusEvents,
   live,
 }: {
   orders: DeliveryOrder[];
+  statusEvents: StatusEvent[];
   live: boolean;
 }) {
   const [profile, setProfile] = useState<BusinessProfile>(emptyBusinessProfile);
@@ -105,6 +108,10 @@ export function ManagerBusiness({
     for (const order of orders) counts[orderPaymentMethod(order)] += 1;
     return counts;
   }, [orders]);
+  const intelligence = useMemo(
+    () => calculateBusinessIntelligence(orders, statusEvents),
+    [orders, statusEvents],
+  );
 
   function persist(next: BusinessProfile) {
     setProfile(next);
@@ -151,9 +158,95 @@ export function ManagerBusiness({
   const total = orders.length;
   const share = (count: number) =>
     total ? `${Math.round((count / total) * 100)}%` : "—";
+  const rate = (value: number | null) =>
+    value == null ? "—" : `${Math.round(value * 100)}%`;
 
   return (
     <div className="mh-page biz-page">
+      <Panel
+        id="biz-intelligence"
+        title="Business alignment"
+        description="A decision score built from service reliability, realized delivery-fee revenue, and COD control."
+      >
+        <div className="biz-intelligence">
+          <div className="biz-score" data-state={intelligence.scoreLabel}>
+            <span>Alignment score</span>
+            <strong>
+              {intelligence.score == null ? "—" : intelligence.score}
+              {intelligence.score != null && <small>/100</small>}
+            </strong>
+            <b>{intelligence.scoreLabel}</b>
+          </div>
+          <dl className="biz-kpis">
+            <div>
+              <dt>Completion</dt>
+              <dd>{rate(intelligence.completionRate)}</dd>
+              <small>
+                {intelligence.deliveredOrders} of {intelligence.closedOrders}{" "}
+                closed
+              </small>
+            </div>
+            <div>
+              <dt>On-time</dt>
+              <dd>{rate(intelligence.onTimeRate)}</dd>
+              <small>Measured against saved ETA</small>
+            </div>
+            <div>
+              <dt>Fee realization</dt>
+              <dd>{rate(intelligence.revenueRealizationRate)}</dd>
+              <small>
+                {currency.format(intelligence.earnedRevenue)} earned
+              </small>
+            </div>
+            <div>
+              <dt>COD control</dt>
+              <dd>{rate(intelligence.cashControlRate)}</dd>
+              <small>Settled share of collected value</small>
+            </div>
+          </dl>
+        </div>
+        <details className="biz-formula">
+          <summary>How the score works</summary>
+          <p>
+            45% service reliability + 35% fee realization + 20% COD control.
+            Service reliability combines successful closure (55%) and on-time
+            delivery (45%). Missing legacy data is excluded and the remaining
+            weights are rebalanced.
+          </p>
+        </details>
+        {intelligence.recommendations.length > 0 ? (
+          <ol
+            className="biz-recommendations"
+            aria-label="Prioritized business actions"
+          >
+            {intelligence.recommendations.map((recommendation) => (
+              <li
+                key={recommendation.id}
+                data-priority={recommendation.priority}
+              >
+                <span className="biz-priority">
+                  {recommendation.priority === "positive"
+                    ? "Ready"
+                    : `${recommendation.priority} priority`}
+                </span>
+                <div>
+                  <strong>{recommendation.title}</strong>
+                  <p>{recommendation.detail}</p>
+                </div>
+                <Link href={recommendation.href}>
+                  {recommendation.action} <Icon name="arrow-right" size={15} />
+                </Link>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="mh-empty">
+            Complete orders and record delivery outcomes to unlock aligned
+            business recommendations.
+          </p>
+        )}
+      </Panel>
+
       <Panel
         id="biz-settle"
         title="Settlement summary"
@@ -222,7 +315,7 @@ export function ManagerBusiness({
                       <strong>{location.label}</strong>
                       <small>
                         {location.address}
-                        {location.contactPhone && ` · ${location.contactPhone}`}
+                        {location.contactPhone && `, ${location.contactPhone}`}
                       </small>
                     </span>
                     <button

@@ -42,7 +42,9 @@ export function construct(inst: Instance, matrix: Matrix): State {
 
 /**
  * Regret-2 insertion of `requests` into an existing state, in place. Requests
- * that fit on no truck join `state.unassigned`.
+ * that fit on no truck join `state.unassigned`, and so do requests whose
+ * cheapest insertion into a running route costs more than `unservedPenalty`
+ * once nothing cheaper is left to place (leaving them out is then better).
  */
 export function regretInsert(
   inst: Instance,
@@ -68,6 +70,7 @@ export function regretInsert(
     let chosen = -1;
     let chosenRegret = -Infinity;
     let chosenTruck = -1;
+    const costly: number[] = [];
     for (const r of [...pending].sort((a, b) => a - b)) {
       let row = options.get(r);
       if (!row) {
@@ -87,6 +90,17 @@ export function regretInsert(
         state.unassigned.push(r);
         continue;
       }
+      // Worth more than leaving the order out? Wait: other insertions may
+      // make a shared trip cheaper. It is declined if nothing else remains.
+      // A first order on an empty truck also carries the truck's fixed cost,
+      // which later orders share, so only a running route can decline.
+      if (
+        state.routes[feasible[0].k].length > 0 &&
+        feasible[0].option.delta > inst.params.unservedPenalty + 1e-9
+      ) {
+        costly.push(r);
+        continue;
+      }
       const regret =
         feasible.length === 1
           ? Number.POSITIVE_INFINITY
@@ -101,7 +115,14 @@ export function regretInsert(
         chosenTruck = feasible[0].k;
       }
     }
-    if (chosen < 0) break;
+    if (chosen < 0) {
+      for (const r of costly) {
+        pending.delete(r);
+        options.delete(r);
+        state.unassigned.push(r);
+      }
+      break;
+    }
     const row = options.get(chosen);
     const pick = row?.[chosenTruck];
     if (!pick) break;
@@ -121,4 +142,50 @@ function tieBefore(inst: Instance, a: number, b: number) {
   if (ra.weightKg !== rb.weightKg) return ra.weightKg > rb.weightKg;
   if (ra.windowEnd !== rb.windowEnd) return ra.windowEnd < rb.windowEnd;
   return a < b;
+}
+
+/**
+ * Drops orders (and whole trips) that cost more than the penalty for leaving
+ * them out, in place. Repeats while the objective improves, largest saving
+ * first. Removing stops never breaks a route, but it is re-evaluated anyway.
+ */
+export function dropUnprofitable(
+  inst: Instance,
+  matrix: Matrix,
+  state: State,
+): void {
+  const penalty = inst.params.unservedPenalty;
+  for (;;) {
+    let best: {
+      k: number;
+      seq: Stop[];
+      eval: RouteEval;
+      dropped: number[];
+      saving: number;
+    } | null = null;
+    inst.trucks.forEach((truck, k) => {
+      const seq = state.routes[k];
+      if (seq.length === 0) return;
+      const orders = [...new Set(seq.map((stop) => stop.r))];
+      const candidates = orders.map((r) => ({
+        dropped: [r],
+        seq: seq.filter((stop) => stop.r !== r),
+      }));
+      if (orders.length > 1) candidates.push({ dropped: orders, seq: [] });
+      for (const c of candidates) {
+        const result = evaluateRoute(inst, matrix, truck, c.seq);
+        if (!result.feasible) continue;
+        const saving =
+          state.evals[k].score - result.score - c.dropped.length * penalty;
+        if (saving > 1e-9 && (best == null || saving > best.saving))
+          best = { k, seq: c.seq, eval: result, dropped: c.dropped, saving };
+      }
+    });
+    if (!best) break;
+    const pick: NonNullable<typeof best> = best;
+    state.routes[pick.k] = pick.seq;
+    state.evals[pick.k] = pick.eval;
+    state.unassigned.push(...pick.dropped);
+  }
+  state.unassigned.sort((a, b) => a - b);
 }

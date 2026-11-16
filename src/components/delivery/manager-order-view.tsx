@@ -167,54 +167,45 @@ export function ManagerOrderView({
     return order.status !== "pending" || confirmedIds.has(order.id);
   };
 
-  // Order confirmation handler
-  async function handleConfirmOrder(order: DeliveryOrder) {
-    if (isOrderConfirmed(order) || savingId === order.id) return;
-    setSavingId(order.id);
+  // Confirm one or many orders in a single call, then jump to the next order
+  // that still needs a decision so the dispatcher never has to hunt for it.
+  async function handleConfirmOrders(targets: DeliveryOrder[]) {
+    const pending = targets.filter((order) => !isOrderConfirmed(order));
+    if (!pending.length || savingId) return;
+    const ids = new Set(pending.map((order) => order.id));
+    const label =
+      pending.length === 1
+        ? `Delivery ${pending[0].tracking_code}`
+        : `${pending.length} deliveries`;
+    setSavingId(pending.length === 1 ? pending[0].id : "bulk");
     setNotice(null);
 
     try {
-      if (workspace.isDemo || order.id.startsWith("demo-")) {
-        // Immediate local state update for demo
-        workspace.updateData((previous) => ({
-          ...previous,
-          orders: previous.orders.map((o) =>
-            o.id === order.id
-              ? { ...o, status: "assigned" as DeliveryStatus }
-              : o,
-          ),
-        }));
-        setConfirmedOrderIds((prev) => new Set(prev).add(order.id));
-        setNotice({
-          tone: "success",
-          text: `Delivery ${order.tracking_code} confirmed! Posted to the driver job board.`,
-        });
-        return;
+      const isDemo =
+        workspace.isDemo || pending.every((o) => o.id.startsWith("demo-"));
+      if (!isDemo) {
+        if (!workspace.canUseLiveData || !workspace.profile) {
+          throw new Error("Manager access required to confirm live orders.");
+        }
+        await confirmOrders(createClient(), [...ids]);
       }
-
-      if (!workspace.canUseLiveData || !workspace.profile) {
-        throw new Error("Manager access required to confirm live orders.");
-      }
-
-      const result = await confirmOrders(createClient(), [order.id]);
-      setConfirmedOrderIds((prev) => new Set(prev).add(order.id));
-      setNotice({
-        tone: "success",
-        text: result.confirmed
-          ? `Delivery ${order.tracking_code} confirmed! Posted to the driver job board.`
-          : `Delivery ${order.tracking_code} is already confirmed and posted to the driver job board.`,
-      });
+      setConfirmedOrderIds((prev) => new Set([...prev, ...ids]));
       workspace.updateData((previous) => ({
         ...previous,
         orders: previous.orders.map((o) =>
-          o.id === order.id
-            ? { ...o, status: "assigned" as DeliveryStatus }
-            : o,
+          ids.has(o.id) ? { ...o, status: "assigned" as DeliveryStatus } : o,
         ),
       }));
-      void workspace.refresh(true);
+      const next = queueOrders.find(
+        (o) => !ids.has(o.id) && !isOrderConfirmed(o) && o.status === "pending",
+      );
+      if (next) setSelectedId(next.id);
+      setNotice({
+        tone: "success",
+        text: `${label} confirmed and posted to the driver job board.`,
+      });
+      if (!isDemo) void workspace.refresh(true);
     } catch (cause) {
-      console.error("[DEBUG handleConfirmOrder] catch error:", cause);
       setNotice({
         tone: "error",
         text:
@@ -506,6 +497,36 @@ export function ManagerOrderView({
                   }}
                 />
               </Stack>
+              {toConfirmCount > 1 && (
+                <Button
+                  size="small"
+                  variant="contained"
+                  disabled={savingId !== null}
+                  onClick={() =>
+                    void handleConfirmOrders(
+                      orders.filter(
+                        (o) =>
+                          o.status === "pending" && !confirmedIds.has(o.id),
+                      ),
+                    )
+                  }
+                  sx={{
+                    bgcolor: "var(--color-brand-orange-action)",
+                    color: "var(--color-text-inverse)",
+                    fontWeight: 700,
+                    textTransform: "none",
+                    borderRadius: "8px",
+                    boxShadow: "none",
+                    "&:hover": {
+                      bgcolor: "var(--color-brand-orange-action-hover)",
+                    },
+                  }}
+                >
+                  {savingId === "bulk"
+                    ? "Confirming…"
+                    : `Confirm all ${toConfirmCount}`}
+                </Button>
+              )}
             </Box>
 
             {/* Material Outlined Search */}
@@ -1182,39 +1203,10 @@ export function ManagerOrderView({
 
                   {/* ORDER CONFIRMATION BUTTON - NO LONGER CLICKABLE ONCE CONFIRMED */}
                   <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
-                    {isOrderConfirmed(selectedOrder) ? (
+                    {isOrderConfirmed(selectedOrder) ? null : (
                       <Button
                         variant="contained"
-                        disabled
-                        aria-disabled="true"
-                        tabIndex={-1}
-                        startIcon={
-                          <CheckCircleOutlined
-                            sx={{ fontSize: "18px !important" }}
-                          />
-                        }
-                        sx={{
-                          width: { xs: "100%", sm: "auto" },
-                          bgcolor: "var(--color-success) !important",
-                          color: "var(--color-text-inverse) !important",
-                          opacity: "0.95 !important",
-                          cursor: "not-allowed !important",
-                          pointerEvents: "none !important",
-                          fontWeight: 700,
-                          fontSize: "14px",
-                          textTransform: "none",
-                          borderRadius: "10px",
-                          py: 1.1,
-                          px: 2.75,
-                          boxShadow: "none !important",
-                        }}
-                      >
-                        Order Confirmed
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="contained"
-                        onClick={() => handleConfirmOrder(selectedOrder)}
+                        onClick={() => handleConfirmOrders([selectedOrder])}
                         disabled={savingId === selectedOrder.id}
                         startIcon={<CheckRounded sx={{ fontSize: "18px" }} />}
                         sx={{
@@ -1242,63 +1234,21 @@ export function ManagerOrderView({
                   </Box>
                 </Paper>
 
-                {/* Confirmation Status Explanatory Card */}
-                {isOrderConfirmed(selectedOrder) ? (
-                  <Alert
-                    severity="success"
-                    icon={
-                      <CheckCircleOutlined
-                        sx={{ color: "var(--color-success)" }}
-                      />
-                    }
+                {!isOrderConfirmed(selectedOrder) && (
+                  <Typography
+                    variant="body2"
                     sx={{
-                      borderRadius: "12px",
-                      bgcolor: "var(--color-success-surface)",
-                      color: "var(--color-success-text)",
-                      border: "1px solid var(--color-success-surface)",
-                      fontSize: "13px",
-                      fontWeight: 500,
-                    }}
-                  >
-                    <strong>Confirmed order.</strong> This delivery is actively
-                    queued on the driver job board. Drivers in the cluster can
-                    claim and start the delivery. This order is locked and no
-                    longer clickable.
-                  </Alert>
-                ) : (
-                  <Box
-                    sx={{
-                      p: 2,
+                      p: 1.5,
                       borderRadius: "12px",
                       border: "1px solid var(--color-warning-border)",
                       bgcolor: "var(--color-warning-surface)",
+                      color: "var(--color-warning-text)",
+                      fontSize: "13px",
                     }}
                   >
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        fontWeight: 700,
-                        color: "var(--color-warning-text)",
-                        mb: 0.5,
-                      }}
-                    >
-                      Check and confirm
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "var(--color-warning-text)",
-                        fontSize: "13px",
-                        lineHeight: 1.45,
-                      }}
-                    >
-                      Review the pickup and delivery details, then confirm.
-                      Nearby orders are clustered into one job that drivers can
-                      take from the job board. Riders are not assigned by hand.
-                      Click <strong>Confirm order</strong> to immediately
-                      cluster and post this job to the driver board.
-                    </Typography>
-                  </Box>
+                    Check the details, then confirm. The job is clustered with
+                    nearby orders and posted to the driver board.
+                  </Typography>
                 )}
 
                 {/* DETAILED DELIVERY SPECIFICATIONS GRID */}
@@ -1664,7 +1614,7 @@ export function ManagerOrderView({
                       }}
                     >
                       {selectedOrder.driver_name
-                        ? `${selectedOrder.driver_name} · Rider assigned`
+                        ? `${selectedOrder.driver_name}, Rider assigned`
                         : selectedOrder.driver_id
                           ? "Rider assigned"
                           : "Available on Driver Board"}

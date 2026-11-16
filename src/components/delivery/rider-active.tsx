@@ -247,6 +247,7 @@ export function ActiveDelivery({
   error,
   busy,
   onArrived,
+  onContinueHandover,
   onCloseHandover,
   onMenu,
   onLocationHelp,
@@ -274,6 +275,7 @@ export function ActiveDelivery({
   error: ReactNode;
   busy: boolean;
   onArrived: () => void;
+  onContinueHandover: () => void;
   onCloseHandover: () => void;
   onMenu: () => void;
   onLocationHelp: () => void;
@@ -497,37 +499,37 @@ export function ActiveDelivery({
                   </span>
                 </p>
               </div>
-    <fieldset className="dv-strip">
-                  <legend className="sr-only">Stop actions</legend>
-                  {stop.phone ? (
-                    <>
-                      <a
-                        href={phoneHref(stop.phone, "tel")}
-                        aria-label={`Call ${stop.recipient}`}
-                      >
-                        <Icon name="phone" size={20} />
-                        <span>Call</span>
-                      </a>
-                      <a
-                        href={phoneHref(stop.phone, "sms")}
-                        aria-label={`Message ${stop.recipient}`}
-                      >
-                        <Icon name="message" size={20} />
-                        <span>Message</span>
-                      </a>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        void navigator.clipboard?.writeText(stop.address)
-                      }
+              <fieldset className="dv-strip">
+                <legend className="sr-only">Stop actions</legend>
+                {stop.phone ? (
+                  <>
+                    <a
+                      href={phoneHref(stop.phone, "tel")}
+                      aria-label={`Call ${stop.recipient}`}
                     >
-                      <Icon name="copy" size={20} />
-                      <span>Copy address</span>
-                    </button>
-                  )}
-                </fieldset>
+                      <Icon name="phone" size={20} />
+                      <span>Call</span>
+                    </a>
+                    <a
+                      href={phoneHref(stop.phone, "sms")}
+                      aria-label={`Message ${stop.recipient}`}
+                    >
+                      <Icon name="message" size={20} />
+                      <span>Message</span>
+                    </a>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void navigator.clipboard?.writeText(stop.address)
+                    }
+                  >
+                    <Icon name="copy" size={20} />
+                    <span>Copy address</span>
+                  </button>
+                )}
+              </fieldset>
             </div>
 
             {expanded && (
@@ -646,7 +648,21 @@ export function ActiveDelivery({
                   </Button>
                 )}
               </div>
-            ) : null}
+            ) : (
+              <div className="dv-sheet-actions">
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  onClick={onContinueHandover}
+                  disabled={busy || !online}
+                  sx={{ minHeight: 56, borderRadius: 999 }}
+                >
+                  {pickup ? "Confirm pickup" : "Confirm delivery"}
+                </Button>
+              </div>
+            )}
           </>
         )}
       </section>

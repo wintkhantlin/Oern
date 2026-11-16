@@ -23,11 +23,16 @@ export function diagnose(
   if (!fitsSome) return "exceeds_capacity_single";
 
   const seen = new Set<string>();
+  let cheapestAlone = Number.POSITIVE_INFINITY;
   for (const truck of inst.trucks) {
     const alone = bestInsertion(inst, matrix, truck, [], 0, r);
-    if (alone) {
-      return "capacity_exhausted" as UnassignedReason;
-    }
+    if (alone) cheapestAlone = Math.min(cheapestAlone, alone.delta);
+  }
+  if (Number.isFinite(cheapestAlone))
+    return cheapestAlone > p.unservedPenalty
+      ? "cost_exceeds_penalty"
+      : ("capacity_exhausted" as UnassignedReason);
+  for (const truck of inst.trucks) {
     // Rebuild the lone route unchecked to read which rule it breaks.
     const seq =
       request.origin === "depot"

@@ -1,5 +1,6 @@
 import { handlePlan } from "@/lib/delivery/dispatch/handler";
 import { buildStraightLineMatrix } from "@/lib/delivery/dispatch/matrix";
+import { buildOsmMatrix, loadOsmGraph } from "@/lib/delivery/dispatch/osm-matrix";
 import {
   buildRoadMatrix,
   createRoadPairCache,
@@ -67,14 +68,24 @@ export async function POST(request: Request) {
       newKey: () => crypto.randomUUID(),
       makeDeps: (policy) => ({
         nowMs: () => Date.now(),
-        buildMatrix: async (points, params) =>
-          policy === "no_network" || !token
-            ? { matrix: buildStraightLineMatrix(points, params), stats: null }
-            : buildRoadMatrix(points, params, {
-                fetch,
-                token,
-                cache: roadCache,
-              }),
+        buildMatrix: async (points, params) => {
+          if (policy !== "no_network" && token)
+            return buildRoadMatrix(points, params, {
+              fetch,
+              token,
+              cache: roadCache,
+            });
+          // No Mapbox: route over the bundled OpenStreetMap graph instead.
+          const graph = await loadOsmGraph();
+          if (graph) {
+            const osm = buildOsmMatrix(graph, points, params);
+            // Mostly off-network or unreachable pairs would be mislabelled as
+            // road times, so only use the road matrix when coverage is high.
+            if (osm.coverage >= 0.9)
+              return { matrix: osm.matrix, stats: null };
+          }
+          return { matrix: buildStraightLineMatrix(points, params), stats: null };
+        },
       }),
     });
     return reply(result.status, result.body);

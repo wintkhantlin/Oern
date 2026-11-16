@@ -20,7 +20,7 @@ import { createClient } from "@/lib/supabase/client";
 
 const STATE_LABEL: Record<CodState, string> = {
   not_collected: "Cash not recorded",
-  to_settle: "Collected · to settle",
+  to_settle: "Collected, to settle",
   awaiting: "On the road",
   settled: "Settled",
 };
@@ -288,10 +288,9 @@ export function CodLedgerView({
         ) : viewMode === "riders" ? (
           <div className="cod-rider-groups">
             {riderGroups.map((group) => (
-              <article key={group.driverId} className="cod-rider-card">
+              <article key={group.driverId} className="cod-rider-item">
                 <div className="cod-rider-header">
                   <div>
-                    <span className="section-kicker">Rider custody</span>
                     <h3>{group.driverName}</h3>
                   </div>
                   {group.hasDiscrepancy && (
@@ -373,7 +372,7 @@ export function CodLedgerView({
                       >
                         <Icon name="coin" size={14} /> Settle shift (
                         {group.toSettleCount}{" "}
-                        {group.toSettleCount === 1 ? "parcel" : "parcels"} ·{" "}
+                        {group.toSettleCount === 1 ? "parcel" : "parcels"},{" "}
                         {currency.format(group.toSettleTotal)})
                       </button>
                     )}
@@ -392,7 +391,7 @@ export function CodLedgerView({
                         <span
                           className={`cod-ledger-state ${STATE_TONE[r.state]}`}
                         >
-                          COD · {STATE_LABEL[r.state]}
+                          COD, {STATE_LABEL[r.state]}
                         </span>
                         <div className="cod-rider-order-amt">
                           <span>Exp: {currency.format(r.expected)}</span>
@@ -428,7 +427,7 @@ export function CodLedgerView({
                     {orderPaymentBadge(row.order)}
                   </span>
                   <span>
-                    {row.order.driver_name ?? "Unassigned"} ·{" "}
+                    {row.order.driver_name ?? "Unassigned"},{" "}
                     {row.order.customer_name}
                   </span>
                 </div>
@@ -437,7 +436,7 @@ export function CodLedgerView({
                     name={row.state === "settled" ? "check" : "coin"}
                     size={14}
                   />
-                  COD · {STATE_LABEL[row.state]}
+                  COD, {STATE_LABEL[row.state]}
                 </span>
                 <dl className="cod-ledger-amounts">
                   <div>

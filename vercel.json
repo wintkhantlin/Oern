@@ -16,10 +16,5 @@
     }
   ],
   "redirects": [],
-  "rewrites": [],
-  "functions": {
-    "api/**/*.ts": {
-      "maxDuration": 30
-    }
-  }
+  "rewrites": []
 }

@@ -11,12 +11,16 @@ export type ManagerNavId =
   | "complaints"
   | "profile"
   | "jobs"
+  | "flood"
   | "vehicles"
   | "cod"
   | "business"
-  | "coupons";
+  | "coupons"
+  | "routing"
+  | "audit"
+  | "access";
 
-type NavItem = {
+export type NavItem = {
   id: ManagerNavId;
   label: string;
   href: string;
@@ -24,18 +28,19 @@ type NavItem = {
   count?: number;
 };
 
-export function ManagerSidebar({
-  active,
+export type ManagerNavGroup = { label: string; items: NavItem[] };
+
+/** Every manager page, grouped. The console shell and the legacy sidebar read this. */
+export function managerNavGroups({
   orderCount = 0,
   movingCount = 0,
 }: {
-  active?: ManagerNavId;
   orderCount?: number;
   movingCount?: number;
-}) {
-  const groups: { label: string; items: NavItem[] }[] = [
+} = {}): ManagerNavGroup[] {
+  return [
     {
-      label: "Dispatch Operations",
+      label: "Operations",
       items: [
         {
           id: "home",
@@ -52,7 +57,7 @@ export function ManagerSidebar({
         },
         {
           id: "track",
-          label: "Live track",
+          label: "Live tracking",
           href: "/manager/track",
           icon: "track",
           count: movingCount,
@@ -64,39 +69,51 @@ export function ManagerSidebar({
           icon: "plus",
         },
         {
-          id: "complaints",
-          label: "Customer Complaints",
-          href: "/manager/complaints",
-          icon: "help",
+          id: "jobs",
+          label: "Jobs",
+          href: "/manager/jobs",
+          icon: "spark",
+        },
+        {
+          id: "flood",
+          label: "Flood watch",
+          href: "/manager/flood-watch",
+          icon: "flood",
+        },
+        {
+          id: "routing",
+          label: "Route lab",
+          href: "/manager/routing",
+          icon: "compass",
         },
       ],
     },
     {
-      label: "Field & Fleet",
+      label: "Resources",
       items: [
-        {
-          id: "profile",
-          label: "Team roster",
-          href: "/manager/profile",
-          icon: "user",
-        },
-        {
-          id: "jobs",
-          label: "Task Automation",
-          href: "/manager/jobs",
-          icon: "spark",
-        },
         {
           id: "vehicles",
           label: "Vehicles",
           href: "/manager/vehicles",
           icon: "truck",
         },
+        {
+          id: "profile",
+          label: "Team roster",
+          href: "/manager/profile",
+          icon: "users",
+        },
       ],
     },
     {
-      label: "Financials",
+      label: "Customers & finance",
       items: [
+        {
+          id: "complaints",
+          label: "Complaints",
+          href: "/manager/complaints",
+          icon: "help",
+        },
         { id: "cod", label: "COD ledger", href: "/manager/cod", icon: "coin" },
         {
           id: "business",
@@ -108,11 +125,40 @@ export function ManagerSidebar({
           id: "coupons",
           label: "Coupons",
           href: "/manager/coupons",
-          icon: "coin",
+          icon: "wallet",
+        },
+      ],
+    },
+    {
+      label: "Administration",
+      items: [
+        {
+          id: "audit",
+          label: "Audit log",
+          href: "/manager/audit",
+          icon: "history",
+        },
+        {
+          id: "access",
+          label: "Access & roles",
+          href: "/manager/access",
+          icon: "shield",
         },
       ],
     },
   ];
+}
+
+export function ManagerSidebar({
+  active,
+  orderCount = 0,
+  movingCount = 0,
+}: {
+  active?: ManagerNavId;
+  orderCount?: number;
+  movingCount?: number;
+}) {
+  const groups = managerNavGroups({ orderCount, movingCount });
 
   return (
     <aside className="manager-sidebar">

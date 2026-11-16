@@ -169,7 +169,8 @@ export type UnassignedReason =
   | "flood_blocked"
   | "no_eligible_truck"
   | "capacity_exhausted"
-  | "time_exhausted";
+  | "time_exhausted"
+  | "cost_exceeds_penalty";
 
 export type PlanRoute = {
   truckId: string;

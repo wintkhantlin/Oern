@@ -1,4 +1,5 @@
 import type { Graph, NodeId, ShortestPathResult } from "./graph.ts";
+import { MinHeap } from "./heap.ts";
 
 const INF = Number.POSITIVE_INFINITY;
 
@@ -14,20 +15,15 @@ export function aStar(
   const gScore = new Array<number>(nodeCount).fill(INF);
   const fScore = new Array<number>(nodeCount).fill(INF);
   const previous = new Array<number>(nodeCount).fill(-1);
-  const open = new Set<NodeId>([source]);
+  const done = new Uint8Array(nodeCount);
+  const open = new MinHeap();
   gScore[source] = 0;
   fScore[source] = heuristic(source);
+  open.push(fScore[source], source);
 
-  while (open.size > 0) {
-    let current = -1;
-    let best = INF;
-    for (const node of open) {
-      if (fScore[node] < best) {
-        best = fScore[node];
-        current = node;
-      }
-    }
-    if (current < 0) break;
+  while (open.pop()) {
+    const current = open.lastNode;
+    if (done[current] || open.lastKey > fScore[current]) continue;
     if (current === target) {
       const path: NodeId[] = [];
       let node = target;
@@ -38,14 +34,16 @@ export function aStar(
       }
       return { distance: gScore[target], path };
     }
-    open.delete(current);
+    done[current] = 1;
     for (const edge of adjacency[current]) {
       const tentative = gScore[current] + edge.weight;
       if (tentative < gScore[edge.to]) {
         previous[edge.to] = current;
         gScore[edge.to] = tentative;
         fScore[edge.to] = tentative + heuristic(edge.to);
-        open.add(edge.to);
+        // Re-open on improvement (also covers inconsistent heuristics).
+        done[edge.to] = 0;
+        open.push(fScore[edge.to], edge.to);
       }
     }
   }

@@ -357,6 +357,7 @@ export async function handlePlan(
       excludedTrucks: result.excludedTrucks,
       scheduledLater: result.scheduledLater,
       basis: result.basis,
+      certificate: result.certificate,
       serviceDate: req.serviceDate,
       trucks: trucks.map((t) => ({
         id: t.id,

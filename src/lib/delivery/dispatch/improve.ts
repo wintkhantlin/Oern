@@ -84,7 +84,12 @@ export function improve(
         if (ins && (best == null || ins.delta < best.ins.delta))
           best = { k, ins };
       }
-      if (best) {
+      // Placing an order that costs more than its penalty only hurts.
+      if (
+        best &&
+        (state.routes[best.k].length === 0 ||
+          best.ins.delta <= p.unservedPenalty + 1e-9)
+      ) {
         state.routes[best.k] = best.ins.seq;
         state.evals[best.k] = best.ins.eval;
         state.unassigned = state.unassigned.filter((x) => x !== r);

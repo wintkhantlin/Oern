@@ -1,3 +1,8 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: brand · redesign: restyle
+ * paper: oklch(98.4% 0.003 248) · accent: oklch(52% 0.17 40) · display: Inter · body: Inter
+ * nav: dark top bar with a light collapsible side navigation · signature: the resource table, its filters kept in the URL · states: loading, empty, error, unauthorized
+ * axes: light/grotesk-sans/warm · posture: app · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: R, the orange marks selection and the primary action only */
 /* Manager overview in the AWS console (Cloudscape) idiom: containers with a
    header, key-metric columns, status indicators and dense tables.
    Scoped to .mh-* so the older dash-* overrides do not apply. */
@@ -23,11 +28,11 @@
 /* Container */
 .manager-app .mh-card {
   min-width: 0;
-  background: #fff;
+  background: var(--color-surface);
   border: 0;
-  border-radius: 2px;
-  box-shadow: 0 1px 1px rgba(0, 28, 36, 0.3), 1px 1px 1px rgba(0, 28, 36, 0.15),
-    -1px 1px 1px rgba(0, 28, 36, 0.15);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1px 1px color-mix(in srgb, var(--color-brand-navy) 30%, transparent), 1px 1px 1px color-mix(in srgb, var(--color-brand-navy) 15%, transparent),
+    -1px 1px 1px color-mix(in srgb, var(--color-brand-navy) 15%, transparent);
 }
 
 .manager-app .mh-card-head {
@@ -37,7 +42,7 @@
   gap: 12px;
   padding: 16px 20px 12px;
   border-bottom: 1px solid var(--aws-border);
-  background: #fafafa;
+  background: var(--color-surface-subtle);
 }
 
 .manager-app .mh-card-title h2 {
@@ -89,9 +94,9 @@
 .manager-app .mh-more {
   display: block;
   width: 100%;
-  padding: 10px 20px;
+  padding: 8px 20px;
   border: 0;
-  border-top: 1px solid #eaeded;
+  border-top: 1px solid var(--color-border);
   background: transparent;
   color: var(--aws-link);
   font-size: 14px;
@@ -113,7 +118,7 @@
 .manager-app .mh-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 14px;
   line-height: 20px;
   white-space: nowrap;
@@ -124,19 +129,19 @@
 }
 
 .manager-app .mh-status.is-success {
-  color: #037f0c;
+  color: var(--color-success-text);
 }
 
 .manager-app .mh-status.is-error {
-  color: #d91515;
+  color: var(--color-error-text);
 }
 
 .manager-app .mh-status.is-warning {
-  color: #855900;
+  color: var(--color-warning-text);
 }
 
 .manager-app .mh-status.is-info {
-  color: #0972d3;
+  color: var(--color-info-text);
 }
 
 .manager-app .mh-status.is-muted {
@@ -182,11 +187,11 @@
 }
 
 .manager-app .mh-metrics strong.is-warning {
-  color: #855900;
+  color: var(--color-warning-text);
 }
 
 .manager-app .mh-metrics strong.is-error {
-  color: #d91515;
+  color: var(--color-error-text);
 }
 
 /* Tables */
@@ -212,8 +217,8 @@
 }
 
 .manager-app .mh-table td {
-  padding: 10px 20px;
-  border-bottom: 1px solid #eaeded;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
 }
 
@@ -222,7 +227,7 @@
 }
 
 .manager-app .mh-table tbody tr:hover {
-  background: #f1faff;
+  background: var(--console-info-wash);
 }
 
 .manager-app .mh-table .mh-num {
@@ -239,7 +244,7 @@
 }
 
 .manager-app .mh-health li + li {
-  border-top: 1px solid #eaeded;
+  border-top: 1px solid var(--color-border);
 }
 
 .manager-app .mh-health a {
@@ -252,7 +257,7 @@
 }
 
 .manager-app .mh-health a:hover {
-  background: #f1faff;
+  background: var(--console-info-wash);
 }
 
 .manager-app .mh-health-copy {
@@ -279,7 +284,7 @@
 
 .manager-app .mh-bar {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   color: var(--aws-text);
 }
 
@@ -305,21 +310,21 @@
   height: 8px;
   border: 0;
   border-radius: 4px;
-  background: #d5dbdb;
+  background: var(--color-border);
   overflow: hidden;
 }
 
 .manager-app .mh-bar progress::-webkit-progress-bar {
-  background: #d5dbdb;
+  background: var(--color-border);
 }
 
 .manager-app .mh-bar progress::-webkit-progress-value {
-  background: #0972d3;
+  background: var(--color-info-text);
   border-radius: 4px;
 }
 
 .manager-app .mh-bar progress::-moz-progress-bar {
-  background: #0972d3;
+  background: var(--color-info-text);
   border-radius: 4px;
 }
 
@@ -329,7 +334,7 @@
   gap: 16px;
   margin: 0;
   padding-top: 16px;
-  border-top: 1px solid #eaeded;
+  border-top: 1px solid var(--color-border);
 }
 
 .manager-app .mh-kv dt {
@@ -351,7 +356,7 @@
 }
 
 .manager-app .mh-kv dd.is-warning a {
-  color: #855900;
+  color: var(--color-warning-text);
 }
 
 .manager-app .mh-kv small {
@@ -390,4 +395,19 @@
   .manager-app .mh-metrics .mh-status {
     white-space: normal;
   }
+}
+
+.manager-app .mh-more:active { color: var(--console-info-deep); }
+
+/* One focus ring for every interactive part of a container. */
+.manager-app .mh-card a:focus-visible,
+.manager-app .mh-card button:focus-visible,
+.manager-app .mh-card select:focus-visible,
+.manager-app .mh-card input:focus-visible {
+  outline: 2px solid var(--console-focus);
+  outline-offset: 2px;
+}
+
+.manager-app .mh-card-title h2 {
+  text-wrap: balance;
 }

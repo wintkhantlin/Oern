@@ -33,7 +33,7 @@ export type ManagerHomeViewProps = {
 
 const VISIBLE_EXCEPTIONS = 4;
 
-type Tone = "success" | "warning" | "error" | "info" | "muted";
+export type Tone = "success" | "warning" | "error" | "info" | "muted";
 
 type Metric = {
   label: string;
@@ -52,11 +52,11 @@ type HealthRow = {
 };
 
 function ratio(part: number, total: number) {
-  return total ? `${part} / ${total}` : "—";
+  return total ? `${part} / ${total}` : "None";
 }
 
 /** Cloudscape-style status indicator: a small outlined glyph and a label. */
-function StatusIndicator({
+export function StatusIndicator({
   tone,
   children,
 }: {
@@ -112,7 +112,7 @@ function StatusIndicator({
   );
 }
 
-function Container({
+export function Container({
   id,
   title,
   count,
@@ -218,7 +218,7 @@ function Alerts({
                         </Link>
                       </td>
                       <td className="mh-muted">
-                        {item.detail} · {item.meta}
+                        {item.detail}, {item.meta}
                       </td>
                     </tr>
                   );
@@ -304,7 +304,7 @@ function RecentDeliveries({ orders }: { orders: DeliveryOrder[] }) {
                     {order.cod_amount > 0 ? (
                       currency.format(order.cod_amount)
                     ) : (
-                      <span className="mh-muted">—</span>
+                      <span className="mh-muted">None</span>
                     )}
                   </td>
                 </tr>
@@ -400,7 +400,7 @@ function Capacity({
           <div>
             <dt>Open tasks</dt>
             <dd>
-              <Link href="/manager/jobs">{tasks ? tasks.open : "—"}</Link>
+              <Link href="/manager/jobs">{tasks ? tasks.open : "None"}</Link>
               {tasks && <small>{tasks.detail}</small>}
             </dd>
           </div>
@@ -565,7 +565,7 @@ export function ManagerHomeView({
               tasks
                 ? {
                     open: tasks.open,
-                    detail: `${tasks.requests} requests · ${tasks.queued} queued`,
+                    detail: `${tasks.requests} requests, ${tasks.queued} queued`,
                   }
                 : null
             }

@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthDialog } from "@/components/delivery/auth-dialog";
 import {
   ActionToast,
-  DemoBadge,
   LoadingBlock,
   MobileNav,
   PageHeader,
@@ -241,7 +240,7 @@ export function ComplaintsApp({
     if (!selectedComplaint) return;
     if (workspace.isDemo || !workspace.profile) {
       setNotice(
-        "Preview mode: sign in with a support account to update complaints.",
+        "Sign in with a support account to update complaints.",
       );
       return;
     }
@@ -309,15 +308,6 @@ export function ComplaintsApp({
           description="Manage delivery complaints from customers. Classify by urgency and resolve."
         />
 
-        {workspace.isDemo && (
-          <div className="workspace-demo">
-            <DemoBadge>Complaints preview</DemoBadge>
-            <span>
-              Complaint actions are illustrative until a support account signs
-              in.
-            </span>
-          </div>
-        )}
         {workspace.error && (
           <div className="error-notice" role="alert">
             {workspace.error}

@@ -1,0 +1,47 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: brand · redesign: restyle
+ * paper: oklch(98.4% 0.003 248) · accent: oklch(52% 0.17 40) · display: Inter · body: Inter
+ * nav: dark top bar with a light collapsible side navigation · signature: the resource table, its filters kept in the URL · states: loading, empty, error, unauthorized
+ * axes: light/grotesk-sans/warm · posture: app · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: R, the orange marks selection and the primary action only */
+/* Route lab: only what the shared manager containers do not cover. */
+.rl-body { display: grid; gap: 16px; padding: 16px 20px 20px; }
+.rl-map-frame { position: relative; }
+.rl-map { position: relative; width: 100%; height: 520px; border: 1px solid var(--aws-border, var(--color-border)); border-radius: 8px; overflow: hidden; background: var(--aws-bg, var(--color-background)); }
+.rl-map-loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; font-size: 14px; color: var(--aws-muted, var(--color-text-secondary)); pointer-events: none; }
+.rl-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.rl-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.rl-toggle input { width: 18px; height: 18px; accent-color: var(--aws-link, var(--color-info-text)); }
+.rl-btn { min-height: 40px; margin-left: auto; padding: 0 14px; border: 1px solid var(--aws-border, var(--color-border)); border-radius: 8px; background: var(--color-surface, #fff); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.rl-btn:hover { background: var(--color-surface-subtle, #f1f5f9); }
+.rl-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border: 1px solid var(--aws-border, var(--color-border)); border-radius: 8px; background: var(--color-surface, #fff); font: inherit; font-size: 14px; cursor: pointer; }
+.rl-chip[aria-pressed="true"] { border-color: var(--aws-link, var(--color-info-text)); box-shadow: inset 0 0 0 1px var(--aws-link, var(--color-info-text)); }
+.rl-btn:focus-visible, .rl-chip:focus-visible, .rl-toggle input:focus-visible, .rl-pin:focus-visible { outline: 3px solid var(--aws-link, var(--color-info-text)); outline-offset: 2px; }
+.rl-pin { width: 24px; height: 24px; padding: 0; border: 2px solid var(--pin); border-radius: 50%; background: #fff; color: var(--pin); font: 700 11px/1 Inter, sans-serif; cursor: pointer; box-shadow: 0 1px 3px rgb(23 43 77 / 0.35); }
+.rl-pin.is-delivery { background: var(--pin); color: #fff; }
+.rl-depot { display: grid; place-items: center; width: 28px; height: 28px; border: 2px solid #fff; border-radius: 6px; background: #172b4d; color: #fff; font: 700 12px/1 Inter, sans-serif; box-shadow: 0 1px 4px rgb(23 43 77 / 0.4); }
+.rl-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.rl-legend li { display: inline-flex; align-items: center; gap: 8px; }
+.rl-legend i { width: 10px; height: 10px; border-radius: 50%; }
+.rl-legend span { color: var(--aws-muted, var(--color-text-secondary)); }
+.rl-unplaced { display: grid; gap: 4px; margin: 0; font-size: 14px; color: var(--aws-muted, var(--color-text-secondary)); }
+
+.manager-app .mh-metrics li > div { display: grid; gap: 4px; padding: 8px 20px; color: var(--aws-text); }
+.manager-app .mh-metrics strong.is-info { color: var(--aws-link, var(--color-info-text)); }
+
+.rl-controls { gap: 16px; }
+.rl-controls label { display: grid; gap: 8px; font-size: 14px; font-weight: 700; color: var(--aws-text); }
+.rl-controls label > span { display: flex; justify-content: space-between; }
+.rl-controls output { font-weight: 400; font-variant-numeric: tabular-nums; color: var(--aws-muted, var(--color-text-secondary)); }
+.rl-controls input[type="range"] { width: 100%; accent-color: var(--aws-link, var(--color-info-text)); }
+.rl-controls input[type="number"] { min-height: 40px; padding: 0 12px; border: 1px solid var(--aws-border, var(--color-border)); border-radius: 8px; font: inherit; font-weight: 400; background: var(--color-surface); }
+.rl-controls input:focus-visible { outline: 3px solid var(--aws-link, var(--color-info-text)); outline-offset: 2px; }
+
+.rl-check { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 20px; }
+.manager-app .mh-health li + li { border-top: 1px solid var(--aws-border, var(--color-border)); }
+.rl-check .mh-status { flex: 0 0 auto; }
+
+.rl-source-name { text-align: left; font-weight: 700; white-space: nowrap; }
+.mh-page[aria-busy="true"] .rl-map-frame { opacity: 0.6; }
+@media (max-width: 640px) { .rl-map { height: 380px; } .rl-btn { margin-left: 0; } }
+
+.rl-controls input[type="number"]:active { border-color: var(--color-info-text); }

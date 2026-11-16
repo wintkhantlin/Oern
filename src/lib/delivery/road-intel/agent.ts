@@ -10,7 +10,14 @@ export type ToolSpec = {
 
 export type ModelBlock =
   | { type: "text"; text: string }
-  | { type: "tool_use"; id: string; name: string; input: unknown }
+  | {
+      type: "tool_use";
+      id: string;
+      name: string;
+      input: unknown;
+      /** Opaque Gemini token that must be echoed back with the call. */
+      thoughtSignature?: string;
+    }
   | {
       type: "tool_result";
       tool_use_id: string;

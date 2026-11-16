@@ -3,15 +3,13 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { ConsoleShell } from "@/components/console/console-shell";
 import { AuthDialog } from "@/components/delivery/auth-dialog";
 import {
-  DemoBadge,
   LoadingBlock,
-  MobileNav,
   type MobileNavItem,
   StatusBadge,
   signOut,
-  UserActions,
 } from "@/components/delivery/common";
 import { Icon } from "@/components/delivery/icons";
 import { LocationMap } from "@/components/delivery/location-map";
@@ -23,7 +21,6 @@ import { ManagerBusiness } from "@/components/delivery/manager-business";
 import { ManagerCoupons } from "@/components/delivery/manager-coupons";
 import { ManagerHomeView } from "@/components/delivery/manager-home-view";
 import { ManagerOrderView } from "@/components/delivery/manager-order-view";
-import { ManagerSidebar } from "@/components/delivery/manager-sidebar";
 import {
   type ManagerNotice as Notice,
   NoticeStrip,
@@ -535,7 +532,7 @@ export function ManagerDashboard({
     business: {
       title: "Business",
       description:
-        "Settlement, saved pickup locations, fee rules and payment preferences.",
+        "Align service reliability, delivery revenue and cash control with daily operations.",
     },
     coupons: {
       title: "Coupons",
@@ -557,747 +554,682 @@ export function ManagerDashboard({
     : "more";
 
   return (
-    <main className="manager-app" data-view={view}>
-      <ManagerSidebar
-        active={view === "create" ? "create" : activeNav}
-        orderCount={orders.length}
-        movingCount={movingCount}
-      />
-
-      <MobileNav
-        label="Manager workspace"
-        items={mobileNavItems}
-        activeId={mobileActiveId}
-      />
-
-      <div className="manager-main">
-        <header className="manager-topbar">
-          <Link className="manager-topbar-brand" href="/manager/home">
-            <span aria-hidden="true">O</span>
-            Oern <small>Dispatch console</small>
-          </Link>
-          <div className="manager-topbar-right">
-            <span className="manager-date">
-              {signedOut
-                ? "Not signed in"
-                : updatedAt
-                  ? `Updated ${formatTime(updatedAt)}`
-                  : "Loading…"}
-            </span>
-            <button
-              type="button"
-              className="icon-button manager-refresh"
-              aria-label={refreshing ? "Refreshing data" : "Refresh data"}
-              onClick={() => void refreshWorkspace()}
-              disabled={saving || refreshing || signedOut}
-            >
-              <Icon name="refresh" size={16} />
+    <ConsoleShell
+      active={view === "create" ? "create" : activeNav}
+      workspace={workspace}
+      onSignIn={() => setAuthOpen(true)}
+      navCounts={{ orderCount: orders.length, movingCount }}
+      mobileNav={{ items: mobileNavItems, activeId: mobileActiveId }}
+      dataView={view}
+      toolbar={
+        <>
+          <span className="console-updated">
+            {signedOut
+              ? "Not signed in"
+              : updatedAt
+                ? `Updated ${formatTime(updatedAt)}`
+                : "Loading…"}
+          </span>
+          <button
+            type="button"
+            className="console-icon-btn"
+            aria-label={refreshing ? "Refreshing data" : "Refresh data"}
+            onClick={() => void refreshWorkspace()}
+            disabled={saving || refreshing || signedOut}
+          >
+            <Icon name="refresh" size={16} />
+          </button>
+        </>
+      }
+    >
+      <div className="manager-content">
+        {workspace.error && (
+          <div className="error-notice manager-error" role="alert">
+            <Icon name="warning" size={17} />
+            {workspace.error}
+            <button type="button" onClick={() => void workspace.refresh()}>
+              Retry
             </button>
-            <UserActions
-              profile={workspace.profile}
-              isAuthenticated={workspace.isAuthenticated}
-              onSignIn={() => setAuthOpen(true)}
-              onSignOut={() => void signOut()}
-              label="Manager"
-            />
           </div>
+        )}
+        {workspace.isStale && !workspace.error && (
+          <div className="manager-stale-warning" role="alert">
+            <Icon name="warning" size={18} />
+            <span>
+              <strong>Live updates are unavailable.</strong>
+              Showing the last successful workspace data.
+            </span>
+          </div>
+        )}
+
+        <header className="dash-page-header">
+          {view === "create" && (
+            <Link className="manual-order-back" href="/manager/order">
+              <Icon name="arrow-left" size={18} /> Back to orders
+            </Link>
+          )}
+          <h1>{pageCopy.title}</h1>
+          <p>{pageCopy.description}</p>
+          {!signedOut && (view === "order" || view === "home") && (
+            <Link
+              className="button button-primary manual-order-entry"
+              href="/manager/order/create"
+            >
+              <Icon name="plus" size={18} /> Create order
+            </Link>
+          )}
         </header>
 
-        <div className="manager-content">
-          {workspace.isDemo && (
-            <div className="workspace-demo manager-demo">
-              <DemoBadge>Demo operations</DemoBadge>
-              <span>
-                {workspace.canUseLiveData
-                  ? "Live deliveries from Supabase. Create a delivery to start your dispatch board."
-                  : "Sign in to view live orders, riders, and fleet records."}
-              </span>
-            </div>
-          )}
-          {workspace.error && (
-            <div className="error-notice manager-error" role="alert">
-              <Icon name="warning" size={17} />
-              {workspace.error}
-              <button type="button" onClick={() => void workspace.refresh()}>
-                Retry
-              </button>
-            </div>
-          )}
-          {workspace.isStale && !workspace.error && (
-            <div className="manager-stale-warning" role="alert">
-              <Icon name="warning" size={18} />
-              <span>
-                <strong>Live updates are unavailable.</strong>
-                Showing the last successful workspace data.
-              </span>
-              <button
-                type="button"
-                className="button button-outline"
-                onClick={() => void refreshWorkspace()}
-                disabled={refreshing}
-              >
-                <Icon name="refresh" size={15} />
-                {refreshing ? "Refreshing…" : "Refresh"}
-              </button>
-            </div>
-          )}
-
-          <header className="dash-page-header">
-            <nav className="manager-breadcrumbs" aria-label="Breadcrumb">
-              <ol>
-                <li>
-                  <Link href="/manager/home">Oern</Link>
-                </li>
-                {view !== "home" && (
-                  <li>
-                    <Link href="/manager/home">Dispatch</Link>
-                  </li>
-                )}
-                <li aria-current="page">{pageCopy.title}</li>
-              </ol>
-            </nav>
-            {view === "create" && (
-              <Link className="manual-order-back" href="/manager/order">
-                <Icon name="arrow-left" size={18} /> Back to orders
-              </Link>
-            )}
-            <h1>{pageCopy.title}</h1>
-            <p>{pageCopy.description}</p>
-            {!signedOut && (view === "order" || view === "home") && (
-              <Link
-                className="button button-primary manual-order-entry"
-                href="/manager/order/create"
-              >
-                <Icon name="plus" size={18} /> Create order
-              </Link>
-            )}
-          </header>
-
-          {signedOut && (
-            <section
-              className="dash-card dash-signin"
-              aria-label="Sign in required"
+        {signedOut && (
+          <section
+            className="dash-card dash-signin"
+            aria-label="Sign in required"
+          >
+            <h2>Sign in to see live operations</h2>
+            <p>
+              Deliveries, riders and road reports appear here once you are
+              signed in with a manager account.
+            </p>
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={() => setAuthOpen(true)}
             >
-              <h2>Sign in to see live operations</h2>
-              <p>
-                Deliveries, riders and road reports appear here once you are
-                signed in with a manager account.
-              </p>
-              <button
-                type="button"
-                className="button button-primary"
-                onClick={() => setAuthOpen(true)}
+              Sign in
+              <Icon name="arrow-right" size={16} />
+            </button>
+          </section>
+        )}
+
+        {view === "home" && !signedOut && (
+          <ManagerHomeView
+            workspace={workspace}
+            movingCount={movingCount}
+            deliveredCount={deliveredCount}
+            atRiskCount={atRiskCount}
+            refreshing={refreshing}
+            onRefresh={refreshWorkspace}
+            recentList={recentList}
+            summary={summary}
+            freeRiders={freeRiders}
+            availableVehicles={availableVehicles}
+            tasks={
+              workspace.canUseLiveData && !workspace.isDemo
+                ? {
+                    requests: orders.filter(
+                      (order) =>
+                        order.status === "pending" &&
+                        !jobBoard.queuedIds.has(order.id),
+                    ).length,
+                    queued: jobBoard.queue.filter((entry) => !entry.job_id)
+                      .length,
+                    open: jobBoard.jobs.filter((job) => job.status === "open")
+                      .length,
+                  }
+                : null
+            }
+          />
+        )}
+
+        {!signedOut && view === "cod" && (
+          <CodLedgerView
+            orders={orders}
+            live={workspace.canUseLiveData && !workspace.isDemo}
+          />
+        )}
+
+        {!signedOut && view === "business" && (
+          <ManagerBusiness
+            orders={orders}
+            statusEvents={workspace.data.statusEvents}
+            live={workspace.canUseLiveData && !workspace.isDemo}
+          />
+        )}
+
+        {!signedOut && view === "coupons" && (
+          <ManagerCoupons
+            live={workspace.canUseLiveData && !workspace.isDemo}
+          />
+        )}
+
+        {!signedOut && view === "create" && (
+          <ManagerCreateOrder
+            canCreate={workspace.canUseLiveData && !workspace.isDemo}
+          />
+        )}
+
+        {!signedOut && view === "order" && (
+          <ManagerOrderView
+            workspace={workspace}
+            orders={queueOrders}
+            movingOrders={movingOrders}
+            movingCount={movingCount}
+            initialSelectedId={searchParams.get("id") ?? undefined}
+          />
+        )}
+
+        {!signedOut && view === "profile" && (
+          <section className="manager-profile-grid">
+            <article className="manager-profile-card">
+              <span className="manager-profile-avatar">
+                {(workspace.profile?.full_name?.[0] ?? "O").toUpperCase()}
+              </span>
+              <div>
+                <h2>{workspace.profile?.full_name || "Oern Dispatch"}</h2>
+                <p>Signed-in operator, Yangon delivery operations workspace</p>
+              </div>
+              <span className="status-badge status-success">
+                <Icon name="shield" size={13} /> Manager access
+              </span>
+            </article>
+          </section>
+        )}
+
+        {!signedOut && view === "profile" && (
+          <section className="dash-card" id="team-roster">
+            <header className="dash-card-header team-roster-header">
+              <div>
+                <h2>Team & Fleet</h2>
+              </div>
+              <div
+                className="order-filter-tabs"
+                role="tablist"
+                aria-label="Team and fleet roster tabs"
               >
-                Sign in
-                <Icon name="arrow-right" size={16} />
-              </button>
-            </section>
-          )}
-
-          {view === "home" && !signedOut && (
-            <ManagerHomeView
-              workspace={workspace}
-              movingCount={movingCount}
-              deliveredCount={deliveredCount}
-              atRiskCount={atRiskCount}
-              refreshing={refreshing}
-              onRefresh={refreshWorkspace}
-              recentList={recentList}
-              summary={summary}
-              freeRiders={freeRiders}
-              availableVehicles={availableVehicles}
-              tasks={
-                workspace.canUseLiveData && !workspace.isDemo
-                  ? {
-                      requests: orders.filter(
-                        (order) =>
-                          order.status === "pending" &&
-                          !jobBoard.queuedIds.has(order.id),
-                      ).length,
-                      queued: jobBoard.queue.filter((entry) => !entry.job_id)
-                        .length,
-                      open: jobBoard.jobs.filter((job) => job.status === "open")
-                        .length,
-                    }
-                  : null
-              }
-            />
-          )}
-
-          {!signedOut && view === "cod" && (
-            <CodLedgerView
-              orders={orders}
-              live={workspace.canUseLiveData && !workspace.isDemo}
-            />
-          )}
-
-          {!signedOut && view === "business" && (
-            <ManagerBusiness
-              orders={orders}
-              live={workspace.canUseLiveData && !workspace.isDemo}
-            />
-          )}
-
-          {!signedOut && view === "coupons" && (
-            <ManagerCoupons
-              live={workspace.canUseLiveData && !workspace.isDemo}
-            />
-          )}
-
-          {!signedOut && view === "create" && (
-            <ManagerCreateOrder
-              canCreate={workspace.canUseLiveData && !workspace.isDemo}
-            />
-          )}
-
-          {!signedOut && view === "order" && (
-            <ManagerOrderView
-              workspace={workspace}
-              orders={queueOrders}
-              movingOrders={movingOrders}
-              movingCount={movingCount}
-              initialSelectedId={searchParams.get("id") ?? undefined}
-            />
-          )}
-
-          {!signedOut && view === "profile" && (
-            <section className="manager-profile-grid">
-              <article className="manager-profile-card">
-                <span className="manager-profile-avatar">
-                  {(workspace.profile?.full_name?.[0] ?? "O").toUpperCase()}
-                </span>
-                <div>
-                  <span className="section-kicker">Signed-in operator</span>
-                  <h2>{workspace.profile?.full_name || "Oern Dispatch"}</h2>
-                  <p>Yangon delivery operations workspace</p>
-                </div>
-                <span className="status-badge status-success">
-                  <Icon name="shield" size={13} /> Manager access
-                </span>
-              </article>
-            </section>
-          )}
-
-          {!signedOut && view === "profile" && (
-            <section className="dash-card" id="team-roster">
-              <header className="dash-card-header team-roster-header">
-                <div>
-                  <span className="section-kicker">Operations Resources</span>
-                  <h2>Team & Fleet</h2>
-                </div>
-                <div
-                  className="order-filter-tabs"
-                  role="tablist"
-                  aria-label="Team and fleet roster tabs"
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={profileTab === "riders"}
+                  className={profileTab === "riders" ? "is-active" : ""}
+                  onClick={() => setProfileTab("riders")}
                 >
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={profileTab === "riders"}
-                    className={profileTab === "riders" ? "is-active" : ""}
-                    onClick={() => setProfileTab("riders")}
-                  >
-                    Riders <span>{workspace.data.drivers.length}</span>
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={profileTab === "vehicles"}
-                    className={profileTab === "vehicles" ? "is-active" : ""}
-                    onClick={() => setProfileTab("vehicles")}
-                  >
-                    Vehicles <span>{workspace.data.vehicles.length}</span>
-                  </button>
-                </div>
-              </header>
-              <NoticeStrip notice={notice} scope="riders" />
+                  Riders <span>{workspace.data.drivers.length}</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={profileTab === "vehicles"}
+                  className={profileTab === "vehicles" ? "is-active" : ""}
+                  onClick={() => setProfileTab("vehicles")}
+                >
+                  Vehicles <span>{workspace.data.vehicles.length}</span>
+                </button>
+              </div>
+            </header>
+            <NoticeStrip notice={notice} scope="riders" />
 
-              {profileTab === "riders" ? (
-                <ul className="dash-list dash-roster">
-                  {workspace.data.drivers.map((driver) => {
-                    const riding = assignedDrivers.has(driver.id);
-                    const offDuty = driver.availability === "off_duty";
-                    const activeOrder = orders.find(
-                      (o) => o.driver_id === driver.id && isActiveOrder(o),
-                    );
-                    return (
-                      <li key={driver.id} className="team-roster-item">
-                        <span className="dash-roster-name">
-                          <strong>{driver.full_name || "Rider"}</strong>
-                          <small>
-                            <i
-                              className={`fleet-dot ${riding ? "busy" : ""}`}
-                            />
-                            {offDuty
-                              ? "Off duty"
-                              : riding
-                                ? "On delivery"
-                                : "Available"}
-                            {driver.phone && (
-                              <a
-                                href={`tel:${driver.phone}`}
-                                className="team-roster-phone"
-                              >
-                                · {driver.phone}
-                              </a>
-                            )}
-                          </small>
-                          {activeOrder && (
-                            <span className="team-roster-assignment">
-                              Active:{" "}
-                              <strong>{activeOrder.tracking_code}</strong> ·{" "}
-                              {activeOrder.delivery_address}
-                            </span>
+            {profileTab === "riders" ? (
+              <ul className="dash-list dash-roster">
+                {workspace.data.drivers.map((driver) => {
+                  const riding = assignedDrivers.has(driver.id);
+                  const offDuty = driver.availability === "off_duty";
+                  const activeOrder = orders.find(
+                    (o) => o.driver_id === driver.id && isActiveOrder(o),
+                  );
+                  return (
+                    <li key={driver.id} className="team-roster-item">
+                      <span className="dash-roster-name">
+                        <strong>{driver.full_name || "Rider"}</strong>
+                        <small>
+                          <i className={`fleet-dot ${riding ? "busy" : ""}`} />
+                          {offDuty
+                            ? "Off duty"
+                            : riding
+                              ? "On delivery"
+                              : "Available"}
+                          {driver.phone && (
+                            <a
+                              href={`tel:${driver.phone}`}
+                              className="team-roster-phone"
+                            >
+                              , {driver.phone}
+                            </a>
                           )}
-                        </span>
-                        <button
-                          type="button"
-                          className="button button-outline button-small"
-                          onClick={() => void toggleAvailability(driver)}
-                          disabled={saving || !!workspace.error}
-                        >
-                          {offDuty ? "Set on duty" : "Set off duty"}
-                        </button>
-                      </li>
-                    );
-                  })}
-                  {!workspace.data.drivers.length && (
-                    <li className="dash-empty">No rider profiles available.</li>
-                  )}
-                </ul>
-              ) : (
-                <div className="team-vehicles-grid">
-                  {workspace.data.vehicles.map((vehicle) => {
-                    const inUse = orders.some(
-                      (o) => o.vehicle_id === vehicle.id && isActiveOrder(o),
-                    );
-                    const energyLevel =
-                      vehicle.energy_source === "electric"
-                        ? vehicle.battery_level_percent
-                        : vehicle.fuel_level_percent;
-                    return (
-                      <article
-                        key={vehicle.id}
-                        className={`team-vehicle-card ${inUse ? "is-in-use" : ""}`}
-                      >
-                        <div className="team-vehicle-header">
-                          <div>
-                            <strong>{vehicle.registration_number}</strong>
-                            <span className="team-vehicle-type">
-                              {vehicleText(vehicle.vehicle_type)}
-                            </span>
-                          </div>
-                          <span
-                            className={`vehicle-status-tag ${inUse ? "status-busy" : vehicle.status === "available" ? "status-available" : "status-maintenance"}`}
-                          >
-                            {inUse
-                              ? "In use"
-                              : vehicle.status === "available"
-                                ? "Ready"
-                                : sentenceCase(vehicle.status)}
+                        </small>
+                        {activeOrder && (
+                          <span className="team-roster-assignment">
+                            Active: <strong>{activeOrder.tracking_code}</strong>{" "}
+                            , {activeOrder.delivery_address}
                           </span>
-                        </div>
-
-                        <div className="team-vehicle-specs">
-                          <div className="team-spec-item">
-                            <span className="spec-label">Capacity</span>
-                            <strong>
-                              {vehicle.capacity_kg != null
-                                ? `${vehicle.capacity_kg} kg`
-                                : "—"}
-                            </strong>
-                          </div>
-                          <div className="team-spec-item">
-                            <span className="spec-label">Odometer</span>
-                            <strong>
-                              {vehicle.odometer_km.toLocaleString()} km
-                            </strong>
-                          </div>
-                        </div>
-
-                        {energyLevel != null && (
-                          <div className="team-vehicle-energy">
-                            <div className="energy-meter-header">
-                              <span className="energy-label">
-                                <Icon
-                                  name={
-                                    vehicle.energy_source === "electric"
-                                      ? "compass"
-                                      : "truck"
-                                  }
-                                  size={13}
-                                />
-                                {vehicle.energy_source === "electric"
-                                  ? "Battery"
-                                  : "Fuel"}
-                              </span>
-                              <strong className="energy-percent">
-                                {energyLevel}%
-                              </strong>
-                            </div>
-                            <div className="energy-bar-track">
-                              <div
-                                className={`energy-bar-fill ${energyLevel < 20 ? "is-low" : energyLevel < 50 ? "is-mid" : "is-good"}`}
-                                style={{
-                                  width: `${Math.min(100, Math.max(0, energyLevel))}%`,
-                                }}
-                              />
-                            </div>
-                          </div>
                         )}
-                      </article>
-                    );
-                  })}
-                  {!workspace.data.vehicles.length && (
-                    <div className="dash-empty">
-                      No vehicles in fleet roster.
-                    </div>
-                  )}
-                </div>
-              )}
-            </section>
-          )}
-
-          {!signedOut && view === "track" && (
-            <section className="manager-track-grid">
-              <div className="manager-live-orders">
-                <div className="panel-heading-row">
-                  <div>
-                    <span className="section-kicker">After parcel pickup</span>
-                    <h2>Live deliveries</h2>
-                  </div>
-                  <span className="manager-live-tag">
-                    <span className="availability-dot" /> {movingCount} live
-                  </span>
-                </div>
-                <div className="manager-order-list">
-                  {filteredOrders.map((order) => (
-                    <button
-                      type="button"
-                      key={order.id}
-                      className={`manager-order-row ${selectedOrder?.id === order.id ? "is-selected" : ""}`}
-                      onClick={() => setSelectedId(order.id)}
-                    >
-                      <span className="order-row-marker marker-live">
-                        <Icon name="navigation" size={16} />
                       </span>
-                      <span className="manager-row-main">
-                        <span>
-                          <strong>{order.tracking_code}</strong>
-                          <span className="manager-row-customer">
-                            {order.driver_name || "Assigned rider"}
-                          </span>
-                        </span>
-                        <small>{order.delivery_address}</small>
-                      </span>
-                      <span className="manager-row-side">
-                        <StatusBadge status={order.status} />
-                        <small>{formatTime(order.estimated_delivery_at)}</small>
-                      </span>
-                    </button>
-                  ))}
-                  {!filteredOrders.length && (
-                    <div className="manager-empty-list">
-                      No parcels are moving right now.
-                    </div>
-                  )}
-                </div>
-                <div className="manager-road-jobs">
-                  <h3>
-                    Jobs taken by riders <span>{roadJobs.length}</span>
-                  </h3>
-                  {roadJobs.map((job) => {
-                    const rider = workspace.data.drivers.find(
-                      (driver) => driver.id === job.claimed_by,
-                    );
-                    return (
-                      <div className="manager-road-job" key={job.id}>
-                        <span>
-                          <strong>{job.area_label ?? job.label}</strong>
-                          <small>
-                            {rider?.full_name ?? "A rider"} · {job.order_count}{" "}
-                            {job.order_count === 1 ? "parcel" : "parcels"}
-                          </small>
-                        </span>
-                        <span
-                          className={`status-badge ${job.status === "in_progress" ? "status-info" : "status-warning"}`}
-                        >
-                          {job.status === "in_progress"
-                            ? "On the road"
-                            : "Heading to pickup"}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  {!roadJobs.length && (
-                    <p className="manager-road-jobs-empty">
-                      When a rider takes a job from the board it shows here
-                      before the first pickup.
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="manager-track-map">
-                <LocationMap
-                  order={selectedOrder}
-                  orders={filteredOrders}
-                  mode="manager"
-                  isDemo={workspace.isDemo}
-                  tall
-                  onSelectOrder={setSelectedId}
-                  roadReports={workspace.data.roadReports}
-                  focusPoint={mapFocusPoint}
-                />
-                {selectedOrder && (
-                  <div className="manager-track-summary">
-                    <span>
-                      <strong>{selectedOrder.tracking_code}</strong>
-                      <small>
-                        {selectedOrder.customer_name} ·{" "}
-                        {selectedOrder.delivery_address}
-                      </small>
-                    </span>
-                    <StatusBadge status={selectedOrder.status} />
-                  </div>
+                      <button
+                        type="button"
+                        className="button button-outline button-small"
+                        onClick={() => void toggleAvailability(driver)}
+                        disabled={saving || !!workspace.error}
+                      >
+                        {offDuty ? "Set on duty" : "Set off duty"}
+                      </button>
+                    </li>
+                  );
+                })}
+                {!workspace.data.drivers.length && (
+                  <li className="dash-empty">No rider profiles available.</li>
                 )}
-              </div>
-            </section>
-          )}
-
-          {view === "track" && (
-            <section
-              className="road-knowledge-panel rider-requests-panel"
-              id="rider-requests"
-            >
-              <div className="road-knowledge-heading">
-                <div>
-                  <span className="section-kicker">From riders on route</span>
-                  <h2>Rider requests</h2>
-                </div>
-                <span className="manager-live-tag">
-                  {openRequests.length} open
-                </span>
-              </div>
-              <p className="road-knowledge-intro">
-                Fuel and charging stops, breakdowns and other problems riders
-                raise from the road. Acknowledge so the rider knows someone is
-                on it.
-              </p>
-              <NoticeStrip notice={notice} scope="requests" />
-              <div className="road-report-list">
-                {openRequests.map((request) => {
-                  const order = request.order_id
-                    ? orders.find((item) => item.id === request.order_id)
-                    : null;
-                  const vehicle = request.vehicle_id
-                    ? workspace.data.vehicles.find(
-                        (item) => item.id === request.vehicle_id,
-                      )
-                    : null;
+              </ul>
+            ) : (
+              <div className="team-vehicles-grid">
+                {workspace.data.vehicles.map((vehicle) => {
+                  const inUse = orders.some(
+                    (o) => o.vehicle_id === vehicle.id && isActiveOrder(o),
+                  );
+                  const energyLevel =
+                    vehicle.energy_source === "electric"
+                      ? vehicle.battery_level_percent
+                      : vehicle.fuel_level_percent;
                   return (
                     <article
-                      className={`road-report-card rider-request-card is-${request.kind}`}
-                      key={request.id}
+                      key={vehicle.id}
+                      className={`team-vehicle-item ${inUse ? "is-in-use" : ""}`}
                     >
-                      <div className="road-report-title">
+                      <div className="team-vehicle-header">
+                        <div>
+                          <strong>{vehicle.registration_number}</strong>
+                          <span className="team-vehicle-type">
+                            {vehicleText(vehicle.vehicle_type)}
+                          </span>
+                        </div>
                         <span
-                          className={`road-severity ${request.kind === "energy" ? "road-severity-medium" : "road-severity-high"}`}
+                          className={`vehicle-status-tag ${inUse ? "status-busy" : vehicle.status === "available" ? "status-available" : "status-maintenance"}`}
                         >
-                          {request.kind === "energy" ? "Energy" : "Issue"}
+                          {inUse
+                            ? "In use"
+                            : vehicle.status === "available"
+                              ? "Ready"
+                              : sentenceCase(vehicle.status)}
                         </span>
-                        <strong>
-                          {RIDER_REQUEST_LABELS[request.category]} ·{" "}
-                          {request.driver_name}
-                        </strong>
-                        <small>{formatTime(request.created_at)}</small>
                       </div>
-                      {request.note && <p>{request.note}</p>}
-                      <span className="road-report-meta">
-                        {[
-                          order?.tracking_code,
-                          vehicle?.registration_number,
-                          request.energy_level_percent != null
-                            ? `${request.energy_level_percent}% left`
-                            : null,
-                          request.status === "acknowledged"
-                            ? "Acknowledged"
-                            : "Waiting",
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </span>
-                      <div className="road-report-actions">
-                        {request.latitude != null &&
-                          request.longitude != null && (
-                            <>
-                              <button
-                                type="button"
-                                className="button button-outline button-small"
-                                onClick={() => {
-                                  if (
-                                    request.latitude != null &&
-                                    request.longitude != null
-                                  ) {
-                                    setMapFocusPoint({
-                                      latitude: request.latitude,
-                                      longitude: request.longitude,
-                                    });
-                                    document
-                                      .querySelector(".manager-track-map")
-                                      ?.scrollIntoView({ behavior: "smooth" });
-                                  }
-                                }}
-                              >
-                                <Icon name="location" size={13} /> View on map
-                              </button>
-                              <a
-                                className="button button-outline button-small"
-                                href={`https://www.google.com/maps/search/?api=1&query=${request.latitude},${request.longitude}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                Google Maps
-                              </a>
-                            </>
-                          )}
-                        {request.status === "open" && (
-                          <button
-                            type="button"
-                            className="button button-outline button-small"
-                            onClick={() =>
-                              void handleRequest(request, "acknowledged")
-                            }
-                            disabled={saving}
-                          >
-                            Acknowledge
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="button button-dark button-small"
-                          onClick={() =>
-                            void handleRequest(request, "resolved")
-                          }
-                          disabled={saving}
-                        >
-                          Resolve
-                        </button>
+
+                      <div className="team-vehicle-specs">
+                        <div className="team-spec-item">
+                          <span className="spec-label">Capacity</span>
+                          <strong>
+                            {vehicle.capacity_kg != null
+                              ? `${vehicle.capacity_kg} kg`
+                              : "—"}
+                          </strong>
+                        </div>
+                        <div className="team-spec-item">
+                          <span className="spec-label">Odometer</span>
+                          <strong>
+                            {vehicle.odometer_km.toLocaleString()} km
+                          </strong>
+                        </div>
                       </div>
+
+                      {energyLevel != null && (
+                        <div className="team-vehicle-energy">
+                          <div className="energy-meter-header">
+                            <span className="energy-label">
+                              <Icon
+                                name={
+                                  vehicle.energy_source === "electric"
+                                    ? "compass"
+                                    : "truck"
+                                }
+                                size={13}
+                              />
+                              {vehicle.energy_source === "electric"
+                                ? "Battery"
+                                : "Fuel"}
+                            </span>
+                            <strong className="energy-percent">
+                              {energyLevel}%
+                            </strong>
+                          </div>
+                          <div className="energy-bar-track">
+                            <div
+                              className={`energy-bar-fill ${energyLevel < 20 ? "is-low" : energyLevel < 50 ? "is-mid" : "is-good"}`}
+                              style={{
+                                width: `${Math.min(100, Math.max(0, energyLevel))}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </article>
                   );
                 })}
-                {!openRequests.length && (
-                  <div className="road-report-empty">
-                    <Icon name="check" size={18} /> No rider is waiting on
-                    operations.
-                  </div>
+                {!workspace.data.vehicles.length && (
+                  <div className="dash-empty">No vehicles in fleet roster.</div>
                 )}
               </div>
-            </section>
-          )}
+            )}
+          </section>
+        )}
 
-          {view === "track" && (
-            <section className="road-knowledge-panel" id="road-knowledge">
-              <div className="road-knowledge-heading">
+        {!signedOut && view === "track" && (
+          <section className="manager-track-grid">
+            <div className="manager-live-orders">
+              <div className="panel-heading-row">
                 <div>
-                  <span className="section-kicker">Rider intelligence</span>
-                  <h2>Road knowledge</h2>
+                  <h2>Live deliveries</h2>
+                  <p>After parcel pickup</p>
                 </div>
                 <span className="manager-live-tag">
-                  {summary.pendingReports} pending
+                  <span className="availability-dot" /> {movingCount} live
                 </span>
               </div>
-              <p className="road-knowledge-intro">
-                Verify fresh rider reports before they influence predictive
-                ETAs.
-              </p>
-              <NoticeStrip notice={notice} scope="reports" />
-              <div className="road-report-list">
-                {workspace.data.roadReports
-                  .filter((report) => report.status === "pending")
-                  .map((report) => (
-                    <article className="road-report-card" key={report.id}>
-                      <div className="road-report-title">
-                        <span
-                          className={`road-severity road-severity-${report.severity}`}
-                        >
-                          {sentenceCase(report.severity)}
+              <div className="manager-order-list">
+                {filteredOrders.map((order) => (
+                  <button
+                    type="button"
+                    key={order.id}
+                    className={`manager-order-row ${selectedOrder?.id === order.id ? "is-selected" : ""}`}
+                    onClick={() => setSelectedId(order.id)}
+                  >
+                    <span className="order-row-marker marker-live">
+                      <Icon name="navigation" size={16} />
+                    </span>
+                    <span className="manager-row-main">
+                      <span>
+                        <strong>{order.tracking_code}</strong>
+                        <span className="manager-row-customer">
+                          {order.driver_name || "Assigned rider"}
                         </span>
-                        <strong>{sentenceCase(report.category)}</strong>
-                        <small>{formatTime(report.reported_at)}</small>
-                      </div>
-                      <p>{report.description}</p>
-                      {report.decision && (
-                        <p className="road-report-analysis">
-                          <strong>
-                            {report.decision.source === "agent"
-                              ? "AI analysis"
-                              : "Rule-based analysis"}
-                            : {sentenceCase(report.decision.action)} ·{" "}
-                            {Math.round(report.decision.confidence * 100)}%
-                            confident
-                            {report.decision.delayMinutes > 0
-                              ? ` · +${report.decision.delayMinutes} min`
-                              : ""}
-                          </strong>
-                          <br />
-                          {report.decision.rationale}
-                        </p>
-                      )}
-                      <span className="road-report-meta">
-                        {report.driver_name}
-                        {report.order_id
-                          ? ` · ${orders.find((order) => order.id === report.order_id)?.tracking_code ?? "Linked delivery"}`
-                          : ""}
                       </span>
-                      <div className="road-report-actions">
-                        <button
-                          type="button"
-                          className="button button-outline button-small"
-                          onClick={() => {
-                            setMapFocusPoint({
-                              latitude: report.latitude,
-                              longitude: report.longitude,
-                            });
-                            document
-                              .querySelector(".manager-track-map")
-                              ?.scrollIntoView({ behavior: "smooth" });
-                          }}
-                        >
-                          <Icon name="location" size={13} /> View on map
-                        </button>
-                        <button
-                          type="button"
-                          className="button button-outline button-small"
-                          onClick={() =>
-                            void reviewReport(report.id, "rejected")
-                          }
-                          disabled={saving}
-                        >
-                          Reject
-                        </button>
-                        <button
-                          type="button"
-                          className="button button-dark button-small"
-                          onClick={() =>
-                            void reviewReport(report.id, "verified")
-                          }
-                          disabled={saving}
-                        >
-                          Verify for ETA
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                {!summary.pendingReports && (
-                  <div className="road-report-empty">
-                    <Icon name="check" size={18} /> No reports awaiting review.
+                      <small>{order.delivery_address}</small>
+                    </span>
+                    <span className="manager-row-side">
+                      <StatusBadge status={order.status} />
+                      <small>{formatTime(order.estimated_delivery_at)}</small>
+                    </span>
+                  </button>
+                ))}
+                {!filteredOrders.length && (
+                  <div className="manager-empty-list">
+                    No parcels are moving right now.
                   </div>
                 )}
               </div>
-            </section>
-          )}
-        </div>
+              <div className="manager-road-jobs">
+                <h3>
+                  Jobs taken by riders <span>{roadJobs.length}</span>
+                </h3>
+                {roadJobs.map((job) => {
+                  const rider = workspace.data.drivers.find(
+                    (driver) => driver.id === job.claimed_by,
+                  );
+                  return (
+                    <div className="manager-road-job" key={job.id}>
+                      <span>
+                        <strong>{job.area_label ?? job.label}</strong>
+                        <small>
+                          {rider?.full_name ?? "A rider"}, {job.order_count}{" "}
+                          {job.order_count === 1 ? "parcel" : "parcels"}
+                        </small>
+                      </span>
+                      <span
+                        className={`status-badge ${job.status === "in_progress" ? "status-info" : "status-warning"}`}
+                      >
+                        {job.status === "in_progress"
+                          ? "On the road"
+                          : "Heading to pickup"}
+                      </span>
+                    </div>
+                  );
+                })}
+                {!roadJobs.length && (
+                  <p className="manager-road-jobs-empty">
+                    When a rider takes a job from the board it shows here before
+                    the first pickup.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="manager-track-map">
+              <LocationMap
+                order={selectedOrder}
+                orders={filteredOrders}
+                mode="manager"
+                isDemo={workspace.isDemo}
+                tall
+                onSelectOrder={setSelectedId}
+                roadReports={workspace.data.roadReports}
+                focusPoint={mapFocusPoint}
+              />
+              {selectedOrder && (
+                <div className="manager-track-summary">
+                  <span>
+                    <strong>{selectedOrder.tracking_code}</strong>
+                    <small>
+                      {selectedOrder.customer_name},{" "}
+                      {selectedOrder.delivery_address}
+                    </small>
+                  </span>
+                  <StatusBadge status={selectedOrder.status} />
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {view === "track" && (
+          <section
+            className="road-knowledge-panel rider-requests-panel"
+            id="rider-requests"
+          >
+            <div className="road-knowledge-heading">
+              <div>
+                <h2>Rider requests</h2>
+                <p>From riders on route</p>
+              </div>
+              <span className="manager-live-tag">
+                {openRequests.length} open
+              </span>
+            </div>
+            <p className="road-knowledge-intro">
+              Fuel and charging stops, breakdowns and other problems riders
+              raise from the road. Acknowledge so the rider knows someone is on
+              it.
+            </p>
+            <NoticeStrip notice={notice} scope="requests" />
+            <div className="road-report-list">
+              {openRequests.map((request) => {
+                const order = request.order_id
+                  ? orders.find((item) => item.id === request.order_id)
+                  : null;
+                const vehicle = request.vehicle_id
+                  ? workspace.data.vehicles.find(
+                      (item) => item.id === request.vehicle_id,
+                    )
+                  : null;
+                return (
+                  <article
+                    className={`road-report-card rider-request-card is-${request.kind}`}
+                    key={request.id}
+                  >
+                    <div className="road-report-title">
+                      <span
+                        className={`road-severity ${request.kind === "energy" ? "road-severity-medium" : "road-severity-high"}`}
+                      >
+                        {request.kind === "energy" ? "Energy" : "Issue"}
+                      </span>
+                      <strong>
+                        {RIDER_REQUEST_LABELS[request.category]},{" "}
+                        {request.driver_name}
+                      </strong>
+                      <small>{formatTime(request.created_at)}</small>
+                    </div>
+                    {request.note && <p>{request.note}</p>}
+                    <span className="road-report-meta">
+                      {[
+                        order?.tracking_code,
+                        vehicle?.registration_number,
+                        request.energy_level_percent != null
+                          ? `${request.energy_level_percent}% left`
+                          : null,
+                        request.status === "acknowledged"
+                          ? "Acknowledged"
+                          : "Waiting",
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </span>
+                    <div className="road-report-actions">
+                      {request.latitude != null &&
+                        request.longitude != null && (
+                          <>
+                            <button
+                              type="button"
+                              className="button button-outline button-small"
+                              onClick={() => {
+                                if (
+                                  request.latitude != null &&
+                                  request.longitude != null
+                                ) {
+                                  setMapFocusPoint({
+                                    latitude: request.latitude,
+                                    longitude: request.longitude,
+                                  });
+                                  document
+                                    .querySelector(".manager-track-map")
+                                    ?.scrollIntoView({ behavior: "smooth" });
+                                }
+                              }}
+                            >
+                              <Icon name="location" size={13} /> View on map
+                            </button>
+                            <a
+                              className="button button-outline button-small"
+                              href={`https://www.google.com/maps/search/?api=1&query=${request.latitude},${request.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Google Maps
+                            </a>
+                          </>
+                        )}
+                      {request.status === "open" && (
+                        <button
+                          type="button"
+                          className="button button-outline button-small"
+                          onClick={() =>
+                            void handleRequest(request, "acknowledged")
+                          }
+                          disabled={saving}
+                        >
+                          Acknowledge
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="button button-dark button-small"
+                        onClick={() => void handleRequest(request, "resolved")}
+                        disabled={saving}
+                      >
+                        Resolve
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+              {!openRequests.length && (
+                <div className="road-report-empty">
+                  <Icon name="check" size={18} /> No rider is waiting on
+                  operations.
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {view === "track" && (
+          <section className="road-knowledge-panel" id="road-knowledge">
+            <div className="road-knowledge-heading">
+              <div>
+                <h2>Road knowledge</h2>
+              </div>
+              <span className="manager-live-tag">
+                {summary.pendingReports} pending
+              </span>
+            </div>
+            <p className="road-knowledge-intro">
+              Verify fresh rider reports before they influence predictive ETAs.
+            </p>
+            <NoticeStrip notice={notice} scope="reports" />
+            <div className="road-report-list">
+              {workspace.data.roadReports
+                .filter((report) => report.status === "pending")
+                .map((report) => (
+                  <article className="road-report-card" key={report.id}>
+                    <div className="road-report-title">
+                      <span
+                        className={`road-severity road-severity-${report.severity}`}
+                      >
+                        {sentenceCase(report.severity)}
+                      </span>
+                      <strong>{sentenceCase(report.category)}</strong>
+                      <small>{formatTime(report.reported_at)}</small>
+                    </div>
+                    <p>{report.description}</p>
+                    {report.decision && (
+                      <p className="road-report-analysis">
+                        <strong>
+                          {report.decision.source === "agent"
+                            ? "AI analysis"
+                            : "Rule-based analysis"}
+                          : {sentenceCase(report.decision.action)},{" "}
+                          {Math.round(report.decision.confidence * 100)}%
+                          confident
+                          {report.decision.delayMinutes > 0
+                            ? `, +${report.decision.delayMinutes} min`
+                            : ""}
+                        </strong>
+                        <br />
+                        {report.decision.rationale}
+                      </p>
+                    )}
+                    <span className="road-report-meta">
+                      {report.driver_name}
+                      {report.order_id
+                        ? `, ${orders.find((order) => order.id === report.order_id)?.tracking_code ?? "Linked delivery"}`
+                        : ""}
+                    </span>
+                    <div className="road-report-actions">
+                      <button
+                        type="button"
+                        className="button button-outline button-small"
+                        onClick={() => {
+                          setMapFocusPoint({
+                            latitude: report.latitude,
+                            longitude: report.longitude,
+                          });
+                          document
+                            .querySelector(".manager-track-map")
+                            ?.scrollIntoView({ behavior: "smooth" });
+                        }}
+                      >
+                        <Icon name="location" size={13} /> View on map
+                      </button>
+                      <button
+                        type="button"
+                        className="button button-outline button-small"
+                        onClick={() => void reviewReport(report.id, "rejected")}
+                        disabled={saving}
+                      >
+                        Reject
+                      </button>
+                      <button
+                        type="button"
+                        className="button button-dark button-small"
+                        onClick={() => void reviewReport(report.id, "verified")}
+                        disabled={saving}
+                      >
+                        Verify for ETA
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              {!summary.pendingReports && (
+                <div className="road-report-empty">
+                  <Icon name="check" size={18} /> No reports awaiting review.
+                </div>
+              )}
+            </div>
+          </section>
+        )}
       </div>
 
       {moreOpen && (
@@ -1423,6 +1355,6 @@ export function ManagerDashboard({
         audience="team"
         onClose={() => setAuthOpen(false)}
       />
-    </main>
+    </ConsoleShell>
   );
 }

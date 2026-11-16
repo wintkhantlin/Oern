@@ -113,6 +113,13 @@ export type PlanResponse = {
   excludedTrucks: { vehicleId: string; registration: string; reason: string }[];
   scheduledLater: string[];
   basis: string;
+  certificate?: {
+    objective: number;
+    lowerBound: number;
+    gapPct: number | null;
+    exactOptimum: number | null;
+    exactGapPct: number | null;
+  };
   serviceDate: string;
   today: string;
   depot: { code: string; latitude: number; longitude: number };
@@ -209,6 +216,10 @@ export const REASON_COPY: Record<string, { title: string; hint: string }> = {
   time_exhausted: {
     title: "No time left in the day",
     hint: "Add a truck, or move it to another day.",
+  },
+  cost_exceeds_penalty: {
+    title: "Costs more than it is worth",
+    hint: "Raise the unserved-order penalty, or serve it another way.",
   },
   manager_excluded: {
     title: "Left out by a manager",

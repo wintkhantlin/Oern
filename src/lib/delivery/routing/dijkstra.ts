@@ -1,4 +1,5 @@
 import type { Graph, NodeId, ShortestPathResult } from "./graph.ts";
+import { MinHeap } from "./heap.ts";
 
 const INF = Number.POSITIVE_INFINITY;
 
@@ -6,30 +7,30 @@ export function dijkstra(
   graph: Graph,
   source: NodeId,
   target?: NodeId,
+  /** Stop once every node in this set is settled (ignored when `target` is set). */
+  targets?: ReadonlySet<NodeId>,
 ): { distances: number[]; previous: number[] } {
   const { nodeCount, adjacency } = graph;
   const distances = new Array<number>(nodeCount).fill(INF);
   const previous = new Array<number>(nodeCount).fill(-1);
-  const visited = new Array<boolean>(nodeCount).fill(false);
+  const done = new Uint8Array(nodeCount);
+  const heap = new MinHeap();
   distances[source] = 0;
+  heap.push(0, source);
+  let pending = targets && target === undefined ? targets.size : -1;
 
-  for (let settled = 0; settled < nodeCount; settled++) {
-    let u = -1;
-    let best = INF;
-    for (let i = 0; i < nodeCount; i++) {
-      if (!visited[i] && distances[i] < best) {
-        best = distances[i];
-        u = i;
-      }
-    }
-    if (u < 0 || best === INF) break;
+  while (heap.pop()) {
+    const u = heap.lastNode;
+    if (done[u] || heap.lastKey > distances[u]) continue;
     if (target !== undefined && u === target) break;
-    visited[u] = true;
+    done[u] = 1;
+    if (pending > 0 && targets?.has(u) && --pending === 0) break;
     for (const edge of adjacency[u]) {
       const alt = distances[u] + edge.weight;
       if (alt < distances[edge.to]) {
         distances[edge.to] = alt;
         previous[edge.to] = u;
+        heap.push(alt, edge.to);
       }
     }
   }
@@ -76,25 +77,31 @@ export function bidirectionalDijkstra(
   const distB = new Array<number>(nodeCount).fill(INF);
   const prevF = new Array<number>(nodeCount).fill(-1);
   const prevB = new Array<number>(nodeCount).fill(-1);
-  const doneF = new Array<boolean>(nodeCount).fill(false);
-  const doneB = new Array<boolean>(nodeCount).fill(false);
+  const doneF = new Uint8Array(nodeCount);
+  const doneB = new Uint8Array(nodeCount);
+  const heapF = new MinHeap();
+  const heapB = new MinHeap();
   distF[source] = 0;
   distB[target] = 0;
+  heapF.push(0, source);
+  heapB.push(0, target);
 
   let best = INF;
   let meeting = -1;
 
+  /** Drops stale heap entries so the top key is the true frontier minimum. */
+  const clean = (heap: MinHeap, dist: number[], done: Uint8Array) => {
+    while (
+      heap.size > 0 &&
+      (done[heap.peekNode()] || heap.peekKey() > dist[heap.peekNode()])
+    )
+      heap.pop();
+  };
+
   const settleForward = () => {
-    let u = -1;
-    let bestDist = INF;
-    for (let i = 0; i < nodeCount; i++) {
-      if (!doneF[i] && distF[i] < bestDist) {
-        bestDist = distF[i];
-        u = i;
-      }
-    }
-    if (u < 0) return false;
-    doneF[u] = true;
+    heapF.pop();
+    const u = heapF.lastNode;
+    doneF[u] = 1;
     if (distF[u] + distB[u] < best) {
       best = distF[u] + distB[u];
       meeting = u;
@@ -104,60 +111,46 @@ export function bidirectionalDijkstra(
       if (alt < distF[edge.to]) {
         distF[edge.to] = alt;
         prevF[edge.to] = u;
+        heapF.push(alt, edge.to);
       }
-      if (doneB[edge.to] && distF[edge.to] + distB[edge.to] < best) {
+      if (distF[edge.to] + distB[edge.to] < best) {
         best = distF[edge.to] + distB[edge.to];
         meeting = edge.to;
       }
     }
-    return true;
   };
 
   const settleBackward = () => {
-    let u = -1;
-    let bestDist = INF;
-    for (let i = 0; i < nodeCount; i++) {
-      if (!doneB[i] && distB[i] < bestDist) {
-        bestDist = distB[i];
-        u = i;
-      }
-    }
-    if (u < 0) return false;
-    doneB[u] = true;
+    heapB.pop();
+    const u = heapB.lastNode;
+    doneB[u] = 1;
     if (distF[u] + distB[u] < best) {
       best = distF[u] + distB[u];
       meeting = u;
     }
-    // Backward search follows reversed edges via a precomputed reverse index.
     for (const { from: v, weight } of reverseAdj[u]) {
       const alt = distB[u] + weight;
       if (alt < distB[v]) {
         distB[v] = alt;
         prevB[v] = u;
+        heapB.push(alt, v);
       }
-      if (doneF[v] && distF[v] + distB[v] < best) {
+      if (distF[v] + distB[v] < best) {
         best = distF[v] + distB[v];
         meeting = v;
       }
     }
-    return true;
   };
 
   while (true) {
-    const minF = Math.min(...distF.map((d, i) => (doneF[i] ? INF : d)));
-    const minB = Math.min(...distB.map((d, i) => (doneB[i] ? INF : d)));
+    clean(heapF, distF, doneF);
+    clean(heapB, distB, doneB);
+    const minF = heapF.peekKey();
+    const minB = heapB.peekKey();
     if (minF === INF && minB === INF) break;
-    if (Number.isFinite(best)) {
-      if (minF !== INF && minB !== INF && best <= minF + minB) break;
-      if (minF !== INF && minF >= best) break;
-      if (minB !== INF && minB >= best) break;
-    }
-    if (minF <= minB) {
-      if (!settleForward()) break;
-    } else {
-      if (!settleBackward()) break;
-    }
-    if (minF !== INF && minB !== INF && best <= minF + minB) break;
+    if (best <= minF + minB) break;
+    if (minF <= minB) settleForward();
+    else settleBackward();
   }
 
   if (!Number.isFinite(best) || meeting < 0) {

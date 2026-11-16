@@ -1001,3 +1001,24 @@ export function buildFoodParcelDescription(options: {
 
   return parts.join(" · ");
 }
+
+/** Vendors nearest a point, closest first, with straight-line km. */
+export function nearestFoodVendors(
+  latitude: number,
+  longitude: number,
+  limit = 5,
+): { vendor: FoodVendor; km: number }[] {
+  const rad = (d: number) => (d * Math.PI) / 180;
+  return YANGON_FOOD_VENDORS.map((vendor) => {
+    const dLat = rad(vendor.latitude - latitude);
+    const dLng = rad(vendor.longitude - longitude);
+    const h =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(rad(latitude)) *
+        Math.cos(rad(vendor.latitude)) *
+        Math.sin(dLng / 2) ** 2;
+    return { vendor, km: 2 * 6371 * Math.asin(Math.min(1, Math.sqrt(h))) };
+  })
+    .sort((a, b) => a.km - b.km)
+    .slice(0, Math.max(1, Math.min(limit, 20)));
+}

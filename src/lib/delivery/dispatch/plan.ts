@@ -15,6 +15,8 @@ import { solve } from "./solve.ts";
 import { applyTraffic, type TrafficSummary } from "./traffic.ts";
 import type { DispatchParams, Matrix, Plan, Point } from "./types.ts";
 import { validateSolution } from "./validate.ts";
+import { certify, type Certificate } from "./bounds.ts";
+import { exactOptimum, MAX_EXACT_ORDERS } from "./exact.ts";
 
 export const ENGINE_VERSION = "dispatch-0.3 (regret-2 + local search)";
 export const MAX_ORDERS = 150;
@@ -60,6 +62,7 @@ export type PlanResult =
       excludedTrucks: BuildInstanceResult["excludedTrucks"];
       scheduledLater: string[];
       basis: string;
+      certificate: Certificate;
     };
 
 export type DataQuality = {
@@ -292,6 +295,14 @@ export async function planDispatch(
     excludedTrucks: built.excludedTrucks,
     scheduledLater: built.scheduledLater,
     basis,
+    certificate: certify(
+      inst,
+      matrix,
+      plan,
+      inst.requests.length <= MAX_EXACT_ORDERS
+        ? exactOptimum(inst, matrix).optimum
+        : null,
+    ),
   };
 }
 

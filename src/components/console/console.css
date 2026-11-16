@@ -1,0 +1,681 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: Cloudscape tokens (by request) · redesign: restyle
+ * paper: oklch(96.5% 0.002 200) · accent: oklch(66% 0.17 55) · display: Inter · body: Inter
+ * nav: dark top bar with a light collapsible side navigation · signature: the resource table, its filters kept in the URL · states: loading, empty, error, unauthorized
+ * axes: light/grotesk-sans/warm · posture: app · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: R, the orange sits on selection only; the top bar carries the brand mark as its single other use */
+/* HALLMARK-TOKENS-START */
+:root {
+  /* AWS Cloudscape light-mode values, the admin area's palette (by request). Names only, no logos. */
+  --cs-top: #232f3e;
+  --cs-canvas: #f2f3f3;
+  --cs-surface: #ffffff;
+  --cs-surface-subtle: #fafafa;
+  --cs-border: #d5dbdb;
+  --cs-border-control: #8d99a8;
+  --cs-ink: #0f141a;
+  --cs-ink-muted: #5f6b7a;
+  --cs-ink-subtle: #424650;
+  --cs-link: #0972d3;
+  --cs-accent: #ec7211;
+  --cs-info-wash: #f1faff;
+  --cs-info-border: #b0d7f2;
+  --cs-success: #037f0c;
+  --cs-success-wash: #f2fcf3;
+  --cs-success-border: #a7d8ab;
+  --cs-warning: #8d6605;
+  --cs-warning-wash: #fffce9;
+  --cs-warning-border: #f2d17c;
+  --cs-error: #d91515;
+  --cs-error-wash: #fff7f7;
+  --cs-error-border: #f5a4a4;
+}
+
+/* The admin area reads the project's own token names; here they take Cloudscape values. */
+.manager-app {
+  --color-brand-navy: var(--cs-top);
+  --color-background: var(--cs-canvas);
+  --color-surface: var(--cs-surface);
+  --color-surface-subtle: var(--cs-surface-subtle);
+  --color-border: var(--cs-border);
+  --color-border-control: var(--cs-border-control);
+  --color-text-primary: var(--cs-ink);
+  --color-text-secondary: var(--cs-ink-muted);
+  --color-text-secondary-subtle: var(--cs-ink-subtle);
+  --color-info: var(--cs-link);
+  --color-info-text: var(--cs-link);
+  --color-info-surface: var(--cs-info-wash);
+  --color-info-border: var(--cs-info-border);
+  --color-success: var(--cs-success);
+  --color-success-text: var(--cs-success);
+  --color-success-surface: var(--cs-success-wash);
+  --color-warning: var(--cs-warning);
+  --color-warning-text: var(--cs-warning);
+  --color-warning-surface: var(--cs-warning-wash);
+  --color-warning-border: var(--cs-warning-border);
+  --color-error: var(--cs-error);
+  --color-error-text: var(--cs-error);
+  --color-error-surface: var(--cs-error-wash);
+  --color-error-border: var(--cs-error-border);
+  --color-brand-orange: var(--cs-accent);
+}
+
+/* Derived from the palette; every manager stylesheet reads these. */
+:root {
+  --console-navy-hover: color-mix(
+    in srgb,
+    var(--color-text-inverse) 12%,
+    var(--cs-top)
+  );
+  --console-navy-line: color-mix(
+    in srgb,
+    var(--color-text-inverse) 28%,
+    var(--cs-top)
+  );
+  --console-navy-muted: color-mix(
+    in srgb,
+    var(--color-text-inverse) 62%,
+    var(--cs-top)
+  );
+  --console-info-wash: var(--cs-info-wash);
+  --console-info-deep: color-mix(in srgb, var(--cs-link) 70%, var(--cs-top));
+  --console-shadow: 0 4px 12px
+    color-mix(in srgb, var(--cs-top) 20%, transparent);
+  --console-focus: var(--cs-link);
+}
+/* HALLMARK-TOKENS-END */
+/* Enterprise console shell. Flat surfaces, 8px rhythm, one focus style.
+   Scoped to .console so legacy manager rules cannot leak in or out. */
+
+.manager-app.console {
+  /* Aliases onto the project's own tokens (DESIGN.md). Nothing is declared twice. */
+  --c-1: var(--space-2);
+  --c-2: var(--space-4);
+  --c-3: var(--space-6);
+  --c-4: var(--space-8);
+  --c-top: var(--color-brand-navy);
+  --c-top-hover: var(--console-navy-hover);
+  --c-surface: var(--color-surface);
+  --c-surface-subtle: var(--color-surface-subtle);
+  --c-workspace: var(--color-background);
+  --c-border: var(--color-border);
+  --c-text: var(--color-text-primary);
+  --c-muted: var(--color-text-secondary);
+  --c-link: var(--color-info-text);
+  --c-accent: var(--color-brand-orange-action);
+  --c-success: var(--color-success-text);
+  --c-warning: var(--color-warning-text);
+  --c-error: var(--color-error-text);
+  --c-info: var(--color-info-text);
+  --c-success-bg: var(--color-success-surface);
+  --c-warning-bg: var(--color-warning-surface);
+  --c-error-bg: var(--color-error-surface);
+  --c-info-bg: var(--console-info-wash);
+
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  grid-template-rows: 48px minmax(0, 1fr);
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  color: var(--c-text);
+  font-size: 14px;
+  background: var(--c-workspace);
+  box-shadow: none;
+}
+
+.console :focus-visible {
+  outline: 2px solid var(--c-link);
+  outline-offset: 2px;
+}
+
+.console-skip {
+  position: absolute;
+  left: var(--c-1);
+  top: -48px;
+  z-index: 100;
+  padding: var(--c-1) var(--c-2);
+  background: var(--color-surface);
+  color: var(--c-link);
+}
+.console-skip:focus {
+  top: var(--c-1);
+}
+
+/* ---- Global top bar ---- */
+.console-topbar {
+  grid-column: 1 / -1;
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--c-1);
+  height: 48px;
+  padding: 0 var(--c-2);
+  color: var(--color-text-inverse);
+  background: var(--c-top);
+}
+
+.console-icon-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-border);
+  background: transparent;
+  cursor: pointer;
+}
+.console-icon-btn:hover,
+.console-icon-btn[aria-expanded="true"] {
+  color: var(--color-text-inverse);
+  background: var(--c-top-hover);
+}
+.console-topbar :focus-visible {
+  outline-color: var(--color-text-inverse);
+}
+
+.console-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--c-1);
+  margin-right: var(--c-1);
+  color: var(--color-text-inverse);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.console-brand span {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  background: var(--c-accent);
+}
+.console-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.console-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  color: var(--color-text-inverse);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  background: var(--c-error);
+}
+
+.console-avatar {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: var(--color-text-inverse);
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--c-accent);
+}
+
+.console-signin {
+  height: 32px;
+  padding: 0 var(--c-2);
+  border: 1px solid var(--color-surface);
+  border-radius: 16px;
+  color: var(--color-text-inverse);
+  font: inherit;
+  font-weight: 700;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* ---- Popovers and menus ---- */
+.console-pop {
+  position: relative;
+}
+.console-pop-panel {
+  position: absolute;
+  top: 36px;
+  z-index: 80;
+  min-width: 240px;
+  max-width: min(360px, calc(100vw - 16px));
+  padding: 4px 0;
+  color: var(--c-text);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 8px
+    color-mix(in srgb, var(--color-brand-navy) 20%, transparent);
+}
+.console-pop-panel[data-align="right"] {
+  right: 0;
+}
+.console-pop-panel[data-align="left"] {
+  left: 0;
+}
+.console-menu-item {
+  display: block;
+  width: 100%;
+  padding: var(--c-1) var(--c-2);
+  border: 0;
+  color: var(--c-text);
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+.console-menu-item[data-separated] {
+  border-top: 1px solid var(--c-border);
+}
+.console-menu-item:hover,
+.console-menu-item:focus-visible {
+  background: var(--c-info-bg);
+}
+.console-menu-item[aria-disabled="true"] {
+  color: var(--c-muted);
+  cursor: default;
+  background: transparent;
+}
+/* ---- Side navigation ---- */
+.console-nav {
+  grid-row: 2;
+  position: sticky;
+  top: 48px;
+  align-self: start;
+  width: 240px;
+  height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: var(--c-1) 0 var(--c-3);
+  background: var(--c-surface);
+  border-right: 1px solid var(--c-border);
+}
+.console-nav[hidden] {
+  display: none;
+}
+.console-nav-label {
+  padding: var(--c-2) var(--c-2) 4px;
+  color: var(--c-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.console-nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.console-nav a {
+  display: flex;
+  align-items: center;
+  gap: var(--c-1);
+  padding: 8px var(--c-2) 8px 12px;
+  border-left: 4px solid transparent;
+  color: var(--c-text);
+}
+.console-nav a:hover {
+  background: var(--c-surface-subtle);
+  color: var(--c-link);
+}
+.console-nav a[aria-current="page"] {
+  border-left-color: var(--c-accent);
+  color: var(--c-link);
+  font-weight: 700;
+  background: var(--c-info-bg);
+}
+.console-nav a span {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 0 8px;
+  border-radius: 10px;
+  color: var(--c-muted);
+  font-size: 12px;
+  text-align: center;
+  background: var(--c-workspace);
+}
+
+/* ---- Main region ---- */
+.console-main {
+  grid-row: 2;
+  grid-column: 2;
+  min-width: 0;
+  padding: var(--c-2) var(--c-3) var(--c-4);
+}
+.console-main:focus {
+  outline: none;
+}
+.console .manager-content {
+  display: grid;
+  align-content: start;
+  gap: var(--c-2);
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.console-crumbs {
+  margin-bottom: var(--c-1);
+  font-size: 12px;
+}
+.console-crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--c-muted);
+}
+.console-crumbs li + li::before {
+  content: "›";
+  margin-right: 4px;
+}
+.console-crumbs a {
+  color: var(--c-link);
+}
+.console-crumbs a:hover {
+  text-decoration: underline;
+}
+
+/* ---- States ---- */
+.console-state {
+  display: grid;
+  justify-items: center;
+  gap: var(--c-1);
+  padding: var(--c-4) var(--c-2);
+  border: 1px dashed var(--c-border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  background: var(--c-surface);
+}
+.console-state p {
+  max-width: 48ch;
+  margin: 0;
+  color: var(--c-muted);
+}
+.console-state[data-kind="error"],
+.console-state[data-kind="unauthorized"] {
+  border-color: var(--c-error);
+  background: var(--c-error-bg);
+}
+.console-state[data-kind="warning"] {
+  border-color: var(--c-warning);
+  background: var(--c-warning-bg);
+}
+.console-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--c-border);
+  border-top-color: var(--c-link);
+  border-radius: 50%;
+  animation: console-spin 0.8s linear infinite;
+}
+@keyframes console-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .console-spinner {
+    animation-duration: 3s;
+  }
+}
+
+/* ---- Narrow screens: navigation becomes a drawer ---- */
+.console-scrim {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .console-nav {
+    position: fixed;
+    top: 48px;
+    left: 0;
+    bottom: 0;
+    z-index: 70;
+    height: auto;
+    box-shadow: 0 4px 16px
+      color-mix(in srgb, var(--color-brand-navy) 30%, transparent);
+  }
+  .console-scrim {
+    position: fixed;
+    inset: 48px 0 0 0;
+    z-index: 65;
+    display: block;
+    border: 0;
+    background: color-mix(in srgb, var(--color-brand-navy) 40%, transparent);
+  }
+  .console-main {
+    grid-column: 1 / -1;
+    padding: var(--c-2) var(--c-2) calc(88px + env(safe-area-inset-bottom));
+  }
+}
+/* Summary metrics render as plain cells inside the shared container. */
+.console .mh-metrics li > div {
+  display: grid;
+  gap: 4px;
+  padding: 8px 20px;
+  color: var(--c-text);
+}
+.console .mh-metrics strong.is-info {
+  color: var(--c-info);
+}
+.console .mh-metrics strong.is-success {
+  color: var(--c-success);
+}
+
+/* Key-value pairs, tabs and forms shared by detail pages. */
+.console-kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--c-2) var(--c-3);
+  margin: 0;
+  padding: var(--c-2) 20px 20px;
+}
+.console-kv dt {
+  color: var(--c-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.console-kv dd {
+  margin: 4px 0 0;
+}
+.console-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--c-border);
+  overflow-x: auto;
+}
+.console-tabs button {
+  padding: var(--c-1) var(--c-2);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--c-muted);
+  font: inherit;
+  font-weight: 700;
+  background: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.console-tabs button[aria-selected="true"] {
+  border-bottom-color: var(--c-link);
+  color: var(--c-link);
+}
+.console-form {
+  display: grid;
+  gap: var(--c-2);
+  max-width: 560px;
+  padding: var(--c-2) 20px 20px;
+}
+.console-field {
+  display: grid;
+  gap: 4px;
+  font-weight: 700;
+}
+.console-field small {
+  color: var(--c-muted);
+  font-weight: 400;
+}
+.console-field input,
+.console-field select {
+  height: 32px;
+  padding: 0 var(--c-1);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-weight: 400;
+  background: var(--color-surface);
+}
+.console-field[data-invalid="true"] input,
+.console-field[data-invalid="true"] select {
+  border-color: var(--c-error);
+}
+.console-field .console-error {
+  color: var(--c-error);
+  font-weight: 400;
+}
+.console-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--c-1);
+}
+.console-form-actions [data-dirty] {
+  margin-left: auto;
+  color: var(--c-warning);
+}
+.console-notice {
+  padding: var(--c-1) var(--c-2);
+  border: 1px solid var(--c-info);
+  border-radius: var(--radius-sm);
+  background: var(--c-info-bg);
+}
+.console-notice[data-tone="success"] {
+  border-color: var(--c-success);
+  background: var(--c-success-bg);
+}
+.console-notice[data-tone="error"] {
+  border-color: var(--c-error);
+  background: var(--c-error-bg);
+}
+.console-meter {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--c-link);
+}
+.console-updated {
+  font-size: 12px;
+  color: var(--console-navy-muted);
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .console-updated {
+    display: none;
+  }
+}
+
+/* Grid children must be allowed to shrink so wide tables scroll inside their card. */
+.console .manager-content,
+.console .mh-page {
+  grid-template-columns: minmax(0, 1fr);
+}
+.console .mh-page {
+  display: grid;
+  gap: var(--c-2);
+}
+
+.console-brand-name {
+  font-weight: 700;
+}
+@media (max-width: 640px) {
+  .console-topbar {
+    padding: 0 var(--c-1);
+    gap: 4px;
+  }
+  .console-brand-name {
+    display: none;
+  }
+  .console-search {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+  }
+  .console-top-actions {
+    margin-left: 0;
+    flex: 0 0 auto;
+  }
+  .console-signin {
+    padding: 0 12px;
+  }
+}
+
+/* Pressed and disabled states for every console control. */
+.console-icon-btn:active,
+.console-signin:active,
+.rt-pager button:active {
+  background: var(--console-navy-line);
+}
+.console-menu-item:active {
+  background: var(--color-info-surface);
+}
+.console-icon-btn:disabled,
+.console-signin:disabled,
+.console-menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+@media (pointer: coarse) {
+  .console-icon-btn,
+  .console-signin,
+  .console-menu-item,
+  .rt-pager button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+.console h1,
+.console h2,
+.console h3 {
+  text-wrap: balance;
+}
+
+/* Floor: labels are the body face, sentence case, untracked. Older shared styles
+   shouted them in capitals; inside the admin console they do not. */
+.console .dash-kpi-label,
+.console .dash-delivery-facts small,
+.console .reassign-party-label,
+.console .map-popover-badge,
+.console .hazard-status-tag,
+.console .cod-discrepancy-pill,
+.console .cod-metric-label,
+.console .spec-label,
+.console .live-weather-tag,
+.console .road-severity,
+.console .map-toolbar-eyebrow,
+.console .mcp-result-label,
+.console .mcw-result-label,
+.console .mcp-results h3,
+.console .automation-badge-row,
+.console .recommendation-score small {
+  text-transform: none;
+  letter-spacing: normal;
+}
+.console .live-weather-tag {
+  border-radius: var(--radius-sm);
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useUnsavedChangesGuard } from "@/components/console/use-unsaved-changes";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import "./manager-business.css";
 import { Icon } from "@/components/delivery/icons";
@@ -61,9 +62,12 @@ export function ManagerCreateOrder({ canCreate }: { canCreate: boolean }) {
   const formRef = useRef<HTMLFormElement>(null);
   const nextItemId = useRef(1);
   const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [couponNotice, setCouponNotice] = useState<string | null>(null);
   const [created, setCreated] = useState<CreatedOrder | null>(null);
+  // Any edit marks the form dirty; a created order clears the warning.
+  useUnsavedChangesGuard(dirty && !created);
   const successHeading = useRef<HTMLHeadingElement>(null);
   const senderField = useRef<HTMLInputElement>(null);
   const focusSender = useRef(false);
@@ -297,6 +301,7 @@ export function ManagerCreateOrder({ canCreate }: { canCreate: boolean }) {
       ref={formRef}
       className="operations-panel operations-form manual-order-form"
       onSubmit={submit}
+      onChange={() => setDirty(true)}
       aria-label="Create manual order"
       aria-busy={saving}
     >

@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   calculateRadiusPixels,
   checkRouteFloodExposure,
+  floodZoneAt,
   generateCirclePolygon,
   getYangonFloodZones,
   haversineDistanceKm,
@@ -65,6 +66,39 @@ test("pointInPolygon accurately identifies points inside and outside polygon rin
   assert.ok(!pointInPolygon(16.85, 96.05, ring));
   // Outside East
   assert.ok(!pointInPolygon(16.85, 96.25, ring));
+});
+
+test("floodZoneAt returns the highest hazard for overlapping zones", () => {
+  const ring = [
+    [96.1, 16.8],
+    [96.2, 16.8],
+    [96.2, 16.9],
+    [96.1, 16.9],
+    [96.1, 16.8],
+  ];
+  const base = {
+    severity: "moderate",
+    description: "Test zone",
+    waterDepthEstimateCm: 20,
+    flowRisk: "standing",
+    coordinates: ring,
+    center: { latitude: 16.85, longitude: 96.15 },
+    advisory: "Use caution.",
+  };
+  const zones = [
+    { ...base, id: "low", name: "Low", hazardClass: 1 },
+    {
+      ...base,
+      id: "severe",
+      name: "Severe",
+      hazardClass: 3,
+      severity: "severe",
+    },
+  ];
+
+  assert.equal(floodZoneAt(16.85, 96.15, zones)?.id, "severe");
+  assert.equal(floodZoneAt(null, 96.15, zones), null);
+  assert.equal(floodZoneAt(17, 96.15, zones), null);
 });
 
 test("haversineDistanceKm computes accurate distance across Yangon", () => {

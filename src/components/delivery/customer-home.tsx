@@ -190,26 +190,6 @@ export const CustomerHeader = memo(function CustomerHeader({
   );
 });
 
-export function DemoChip({ onDismiss }: { onDismiss: () => void }) {
-  return (
-    <Box sx={{ ...pageGutter, mt: 1.5 }}>
-      <Chip
-        label="Sample data · preview only, not your deliveries"
-        onDelete={onDismiss}
-        deleteIcon={<Close aria-label="Dismiss notice" />}
-        sx={{
-          ...toneSx("warning"),
-          maxWidth: "100%",
-          height: "auto",
-          minHeight: 36,
-          "& .MuiChip-label": { whiteSpace: "normal", py: 0.75 },
-          "& .MuiChip-deleteIcon": { color: "inherit" },
-        }}
-      />
-    </Box>
-  );
-}
-
 /* ------------------------------------------------------------------- home */
 
 /** Secondary shortcut: a quiet filled row, no outline, so the next parcel stays primary. */

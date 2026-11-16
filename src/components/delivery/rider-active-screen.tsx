@@ -155,7 +155,7 @@ export function RiderActiveScreen({
         : arrivedHere
           ? {
               title: `At stop ${stop.number}`,
-              sub: "Park safely, then confirm arrival",
+              sub: "Park safely, then confirm the parcels below",
               arrow: null,
               turnSymbol: "arrive",
             }
@@ -256,11 +256,7 @@ export function RiderActiveScreen({
         gps={gpsState}
         online={online}
         syncing={busy != null}
-        revision={
-          <>
-            {revisionNotice}
-          </>
-        }
+        revision={revisionNotice}
         expanded={expanded}
         onExpand={setExpanded}
         handover={
@@ -299,6 +295,11 @@ export function RiderActiveScreen({
           setHandoverKey(stop.key);
         }}
         onCloseHandover={() => setHandoverKey(null)}
+        onContinueHandover={() => {
+          setExpanded(false);
+          setActionError(null);
+          setHandoverKey(stop.key);
+        }}
         onMenu={() => openPanel("menu")}
         onLocationHelp={() => openPanel("location")}
         onResumeRoute={onResumeRoute}

@@ -8,7 +8,7 @@ export type ContractionHierarchy = {
   up: { to: NodeId; weight: number }[][];
   /** Backward edges to higher-ranked nodes (reversed adjacency). */
   down: { to: NodeId; weight: number }[][];
-  /** Original graph, retained for a correct fallback query. */
+  /** Set only when the graph was too large to contract: queries run Dijkstra on it. */
   graph?: Graph;
 };
 
@@ -16,15 +16,39 @@ const INF = Number.POSITIVE_INFINITY;
 
 const cache = new WeakMap<Graph, ContractionHierarchy>();
 
+/**
+ * Contraction here adds every shortcut (no witness search), which is
+ * O(V * E). Above this size the hierarchy is not built and queries use a
+ * plain heap Dijkstra on the original graph instead.
+ */
+export const CH_MAX_NODES = 400;
+
 export function contractGraph(graph: Graph): ContractionHierarchy {
   const cached = cache.get(graph);
   if (cached) return cached;
 
   const { nodeCount, adjacency } = graph;
-  // Working adjacency as maps for quick updates.
-  const adj = adjacency.map((edges) =>
-    edges.map((edge) => ({ to: edge.to, weight: edge.weight })),
-  );
+  if (nodeCount > CH_MAX_NODES) {
+    const fallback: ContractionHierarchy = {
+      nodeCount,
+      rank: [],
+      up: [],
+      down: [],
+      graph,
+    };
+    cache.set(graph, fallback);
+    return fallback;
+  }
+  // Working adjacency with parallel edges collapsed to the cheapest one.
+  const adj = adjacency.map((edges) => {
+    const best = new Map<NodeId, number>();
+    for (const edge of edges) {
+      const known = best.get(edge.to);
+      if (known === undefined || edge.weight < known)
+        best.set(edge.to, edge.weight);
+    }
+    return [...best].map(([to, weight]) => ({ to, weight }));
+  });
   const rank = new Array<number>(nodeCount).fill(-1);
 
   // Contract nodes in increasing degree order (simple, deterministic).
@@ -46,8 +70,9 @@ export function contractGraph(graph: Graph): ContractionHierarchy {
       .map((edge) => ({ w: edge.to, weight: edge.weight }));
 
     for (const { u, weight: wuv } of preds) {
+      if (u === v) continue;
       for (const { w, weight: vww } of succs) {
-        if (u === w) continue;
+        if (u === w || w === v) continue;
         const shortcutWeight = wuv + vww;
         const existing = adj[u].find((e) => e.to === w);
         if (!existing || shortcutWeight < existing.weight - 1e-9) {
@@ -79,7 +104,7 @@ export function contractGraph(graph: Graph): ContractionHierarchy {
       }
     }
   }
-  const ch: ContractionHierarchy = { nodeCount, rank, up, down, graph };
+  const ch: ContractionHierarchy = { nodeCount, rank, up, down };
   cache.set(graph, ch);
   return ch;
 }
@@ -143,11 +168,9 @@ export function chQuery(
     const minF = heapF.length > 0 ? heapF[0][0] : INF;
     const minB = heapB.length > 0 ? heapB[0][0] : INF;
     if (minF === INF && minB === INF) break;
-    if (Number.isFinite(best)) {
-      if (minF !== INF && minB !== INF && best <= minF + minB) break;
-      if (minF !== INF && minF >= best) break;
-      if (minB !== INF && minB >= best) break;
-    }
+    // Both searches only climb the hierarchy, so stop once neither frontier
+    // can still improve the best meeting.
+    if (minF >= best && minB >= best) break;
 
     if (minF <= minB) {
       const popped = heapPop(heapF);
@@ -155,7 +178,7 @@ export function chQuery(
       const [d, u] = popped;
       if (visitedF[u]) continue;
       if (d > distF[u]) continue;
-      if (d > best) continue;
+      if (d >= best) continue;
       visitedF[u] = true;
       for (const edge of up[u]) {
         const alt = distF[u] + edge.weight;
@@ -163,11 +186,11 @@ export function chQuery(
           distF[edge.to] = alt;
           heapPush(heapF, [alt, edge.to]);
         }
-        if (visitedB[edge.to] && distF[edge.to] + distB[edge.to] < best) {
+        if (distF[edge.to] + distB[edge.to] < best) {
           best = distF[edge.to] + distB[edge.to];
         }
       }
-      if (visitedB[u] && distF[u] + distB[u] < best) {
+      if (distF[u] + distB[u] < best) {
         best = distF[u] + distB[u];
       }
     } else {
@@ -176,7 +199,7 @@ export function chQuery(
       const [d, u] = popped;
       if (visitedB[u]) continue;
       if (d > distB[u]) continue;
-      if (d > best) continue;
+      if (d >= best) continue;
       visitedB[u] = true;
       for (const edge of down[u]) {
         const alt = distB[u] + edge.weight;
@@ -184,11 +207,11 @@ export function chQuery(
           distB[edge.to] = alt;
           heapPush(heapB, [alt, edge.to]);
         }
-        if (visitedF[edge.to] && distF[edge.to] + distB[edge.to] < best) {
+        if (distF[edge.to] + distB[edge.to] < best) {
           best = distF[edge.to] + distB[edge.to];
         }
       }
-      if (visitedF[u] && distF[u] + distB[u] < best) {
+      if (distF[u] + distB[u] < best) {
         best = distF[u] + distB[u];
       }
     }

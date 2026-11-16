@@ -492,7 +492,9 @@ function PayBalanceOnline({
         }}
       >
         <PaymentLogo method="mmqr" size={32} />
-        <Typography sx={{ fontWeight: 700, color: "#ffffff" }}>Pay with MMQR</Typography>
+        <Typography sx={{ fontWeight: 700, color: "#ffffff" }}>
+          Pay with MMQR
+        </Typography>
       </Button>
     </Box>
   );
@@ -955,24 +957,7 @@ export function TrackDetail({
                 {view.headline}
               </Typography>
 
-              {isDemo ? (
-                <Typography
-                  variant="caption"
-                  sx={{
-                    flex: "none",
-                    color: "text.secondary",
-                    bgcolor: "grey.100",
-                    px: 1,
-                    py: 0.25,
-                    borderRadius: "999px",
-                    fontWeight: 600,
-                  }}
-                >
-                  Sample
-                </Typography>
-              ) : (
-                <ShareTrackingButton order={order} />
-              )}
+              {!isDemo && <ShareTrackingButton order={order} />}
             </Stack>
 
             {/* Subtitle wraps instead of truncating the only copy of a fact */}

@@ -238,6 +238,26 @@ export function pointInPolygon(
   return inside;
 }
 
+/** Returns the highest-hazard mapped zone containing a coordinate. */
+export function floodZoneAt(
+  latitude: number | null | undefined,
+  longitude: number | null | undefined,
+  zones: FloodZone[],
+): FloodZone | null {
+  if (latitude == null || longitude == null) return null;
+
+  let found: FloodZone | null = null;
+  for (const zone of zones) {
+    if (
+      pointInPolygon(latitude, longitude, zone.coordinates) &&
+      (!found || zone.hazardClass > found.hazardClass)
+    ) {
+      found = zone;
+    }
+  }
+  return found;
+}
+
 /**
  * Great-circle distance between two points on Earth in kilometers.
  */

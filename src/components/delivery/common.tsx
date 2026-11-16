@@ -68,15 +68,6 @@ function statusTone(status: DeliveryStatus) {
   }
 }
 
-export function DemoBadge({ children = "Demo data" }: { children?: string }) {
-  return (
-    <span className="demo-badge">
-      <span className="demo-mark">D</span>
-      {children}
-    </span>
-  );
-}
-
 export function UserActions({
   profile,
   isAuthenticated,

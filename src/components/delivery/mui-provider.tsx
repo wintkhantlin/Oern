@@ -139,8 +139,132 @@ const themeOptions: ThemeOptions = {
 
 const appTheme = createTheme({ ...themeOptions, palette: lightPalette });
 
+// The manager console is deliberately denser than the customer and rider
+// flows. Keep that density in a nested theme instead of overriding individual
+// MUI controls in every admin screen.
+const managerTheme = createTheme({
+  ...themeOptions,
+  shape: { borderRadius: 8 },
+  palette: {
+    primary: {
+      main: "#0972d3",
+      dark: "#075fae",
+      light: "#f1faff",
+      contrastText: "#ffffff",
+    },
+    secondary: { main: "#232f3e", contrastText: "#ffffff" },
+    error: { main: "#d91515", light: "#fff7f7", dark: "#b10f0f" },
+    warning: { main: "#8d6605", light: "#fffce9", dark: "#6f5004" },
+    info: { main: "#0972d3", light: "#f1faff", dark: "#075fae" },
+    success: { main: "#037f0c", light: "#f2fcf3", dark: "#026709" },
+    background: { default: "#f2f3f3", paper: "#ffffff" },
+    text: { primary: "#0f141a", secondary: "#5f6b7a" },
+    divider: "#d5dbdb",
+    grey: { 100: "#fafafa", 200: "#f2f3f3" },
+  },
+  typography: {
+    fontFamily: "inherit",
+    fontSize: 14,
+    h1: { fontSize: 24, lineHeight: 1.33, fontWeight: 700 },
+    h2: { fontSize: 18, lineHeight: 1.4, fontWeight: 700 },
+    h3: { fontSize: 15, lineHeight: 1.4, fontWeight: 650 },
+    button: { textTransform: "none", fontSize: 14, fontWeight: 650 },
+  },
+  components: {
+    ...themeOptions.components,
+    MuiButtonBase: {
+      defaultProps: { focusRipple: false },
+      styleOverrides: {
+        root: {
+          "& .MuiTouchRipple-ripplePulsate": { display: "none" },
+          "&.Mui-focusVisible": {
+            outline: "2px solid #0972d3",
+            outlineOffset: "2px",
+          },
+        },
+      },
+    },
+    MuiButton: {
+      defaultProps: { disableElevation: true, disableFocusRipple: true },
+      styleOverrides: {
+        root: {
+          minHeight: 40,
+          borderRadius: 8,
+          paddingInline: 16,
+          boxShadow: "none",
+        },
+      },
+    },
+    MuiIconButton: {
+      defaultProps: { disableFocusRipple: true, size: "small" },
+      styleOverrides: {
+        root: { minWidth: 32, minHeight: 32, borderRadius: 8 },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          minHeight: 40,
+          borderRadius: 8,
+          background: "#ffffff",
+          fontSize: 14,
+          "&:has(input:focus-visible), &:has(textarea:focus-visible)": {
+            outline: "2px solid #0972d3",
+            outlineOffset: 2,
+          },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#0972d3",
+            borderWidth: 1,
+          },
+          "&.Mui-error .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#d91515",
+            borderWidth: 2,
+          },
+        },
+        input: {
+          boxSizing: "border-box",
+          height: 40,
+          padding: "0 12px",
+          caretColor: "#ec7211",
+          "&::placeholder": { color: "#5f6b7a", opacity: 1 },
+        },
+        notchedOutline: { borderColor: "#8d99a8" },
+      },
+    },
+    MuiCard: {
+      defaultProps: { elevation: 0, variant: "outlined" },
+      styleOverrides: {
+        root: { borderColor: "#d5dbdb", borderRadius: 8, boxShadow: "none" },
+      },
+    },
+    MuiPaper: {
+      defaultProps: { elevation: 0 },
+      styleOverrides: { root: { backgroundImage: "none" } },
+    },
+    MuiChip: {
+      defaultProps: { size: "small" },
+      styleOverrides: {
+        root: { height: 28, borderRadius: 8, fontWeight: 650 },
+      },
+    },
+    MuiAlert: {
+      styleOverrides: {
+        root: { borderRadius: 8, alignItems: "center" },
+        message: { paddingBlock: 4 },
+      },
+    },
+    MuiTooltip: {
+      defaultProps: { arrow: true, enterDelay: 500 },
+    },
+  },
+});
+
 export function RiderThemeProvider({ children }: { children: ReactNode }) {
   return <ThemeProvider theme={appTheme}>{children}</ThemeProvider>;
+}
+
+export function ManagerThemeProvider({ children }: { children: ReactNode }) {
+  return <ThemeProvider theme={managerTheme}>{children}</ThemeProvider>;
 }
 
 export function MuiProvider({ children }: { children: ReactNode }) {

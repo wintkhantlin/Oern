@@ -1,4 +1,5 @@
 import { anthropicCaller } from "@/lib/delivery/road-intel/agent";
+import { geminiCaller } from "@/lib/delivery/road-intel/gemini";
 import { handleAnalyze } from "@/lib/delivery/road-intel/handler";
 import { createRoadIntelSource } from "@/lib/delivery/road-intel/supabase-source";
 import { defaultSignalNodes } from "@/lib/delivery/signal-index";
@@ -13,7 +14,11 @@ const reply = (status: number, body: unknown) =>
 const error = (status: number, code: string, message: string) =>
   reply(status, { error: { code, message } });
 
-const MODEL = process.env.ROAD_INTEL_MODEL ?? "claude-sonnet-5-5";
+// Google AI Studio (Gemini) wins when its key is set; Anthropic is the fallback.
+const GEMINI_KEY = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+const MODEL =
+  process.env.ROAD_INTEL_MODEL ??
+  (GEMINI_KEY ? "gemini-2.5-flash" : "claude-sonnet-5-5");
 
 export async function POST(request: Request) {
   if (!request.headers.get("content-type")?.includes("application/json"))
@@ -49,7 +54,12 @@ export async function POST(request: Request) {
 
   // Without a key the rule-based reader still decides; with one, an agent
   // investigates each note first.
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const call = GEMINI_KEY
+    ? geminiCaller({ apiKey: GEMINI_KEY, model: MODEL })
+    : anthropicKey
+      ? anthropicCaller({ apiKey: anthropicKey, model: MODEL })
+      : undefined;
   try {
     const result = await handleAnalyze(body, {
       role,
@@ -61,8 +71,8 @@ export async function POST(request: Request) {
         longitude: node.longitude,
         estimatedCycleSeconds: node.estimatedCycleSeconds,
       })),
-      call: apiKey ? anthropicCaller({ apiKey, model: MODEL }) : undefined,
-      model: apiKey ? MODEL : null,
+      call,
+      model: call ? MODEL : null,
     });
     return reply(result.status, result.body);
   } catch (caught) {

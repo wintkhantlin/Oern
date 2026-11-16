@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { AuthDialog } from "@/components/delivery/auth-dialog";
 import {
   ActionToast,
-  DemoBadge,
   LoadingBlock,
   MobileNav,
   PageHeader,
@@ -39,6 +38,14 @@ const supportNavItems = [
   },
 ] as const;
 
+/** Open urgent work first, then other open work, then resolved cases. */
+function caseRank(item: SupportCase) {
+  if (item.status === "resolved" || item.status === "closed") return 3;
+  if (item.priority === "urgent") return 0;
+  if (item.priority === "high") return 1;
+  return 2;
+}
+
 function caseTone(item: SupportCase) {
   if (item.status === "resolved" || item.status === "closed")
     return "status-success";
@@ -56,15 +63,12 @@ export function SupportApp() {
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [classifying, setClassifying] = useState(false);
-  const [classificationResult, setClassificationResult] = useState<
-    | {
-        priority: string;
-        category: string;
-        confidence: number | null;
-        mode: string;
-      }
-    | null
-  >(null);
+  const [classificationResult, setClassificationResult] = useState<{
+    priority: string;
+    category: string;
+    confidence: number | null;
+    mode: string;
+  } | null>(null);
 
   useEffect(() => {
     void selectedId;
@@ -73,17 +77,19 @@ export function SupportApp() {
   const normalizedQuery = query.trim().toLowerCase();
   const filteredCases = useMemo(
     () =>
-      workspace.data.supportCases.filter((item) => {
-        const order = workspace.data.orders.find(
-          (entry) => entry.id === item.order_id,
-        );
-        return (
-          !normalizedQuery ||
-          `${item.subject} ${item.description} ${order?.tracking_code ?? ""}`
-            .toLowerCase()
-            .includes(normalizedQuery)
-        );
-      }),
+      [...workspace.data.supportCases]
+        .sort((left, right) => caseRank(left) - caseRank(right))
+        .filter((item) => {
+          const order = workspace.data.orders.find(
+            (entry) => entry.id === item.order_id,
+          );
+          return (
+            !normalizedQuery ||
+            `${item.subject} ${item.description} ${order?.tracking_code ?? ""}`
+              .toLowerCase()
+              .includes(normalizedQuery)
+          );
+        }),
     [normalizedQuery, workspace.data.orders, workspace.data.supportCases],
   );
   const selectedCase =
@@ -128,9 +134,7 @@ export function SupportApp() {
       );
     } catch (cause) {
       setNotice(
-        cause instanceof Error
-          ? cause.message
-          : "Could not classify the case.",
+        cause instanceof Error ? cause.message : "Could not classify the case.",
       );
     } finally {
       setClassifying(false);
@@ -141,7 +145,7 @@ export function SupportApp() {
     if (!selectedCase) return;
     if (workspace.isDemo || !workspace.profile) {
       setNotice(
-        "Preview mode: sign in with a support account to update cases.",
+        "Sign in with a support account to update cases.",
       );
       return;
     }
@@ -155,6 +159,13 @@ export function SupportApp() {
         resolutionNotes: resolution,
       });
       await workspace.refresh();
+      if (status === "resolved") {
+        // Move straight on to the next case that still needs work.
+        const next = filteredCases.find(
+          (item) => item.id !== selectedCase.id && caseRank(item) < 3,
+        );
+        if (next) setSelectedId(next.id);
+      }
       setNotice(
         status === "resolved" ? "Case resolved." : "Case assigned to you.",
       );
@@ -195,14 +206,6 @@ export function SupportApp() {
           description="Find the delivery behind each request and record how it was resolved."
         />
 
-        {workspace.isDemo && (
-          <div className="workspace-demo">
-            <DemoBadge>Support preview</DemoBadge>
-            <span>
-              Case actions are illustrative until a support account signs in.
-            </span>
-          </div>
-        )}
         {workspace.error && (
           <div className="error-notice" role="alert">
             {workspace.error}
@@ -307,46 +310,46 @@ export function SupportApp() {
                         <dt>Opened</dt>
                         <dd>{formatDateTime(selectedCase.created_at)}</dd>
                       </div>
-                       {classificationResult && (
-                         <>
-                           <div>
-                             <dt>AI Classification</dt>
-                             <dd>
-                               <span
-                                 style={{
-                                   display: "inline-block",
-                                   fontSize: "0.75rem",
-                                   padding: "0.25rem 0.5rem",
-                                   borderRadius: "0.25rem",
-                                   backgroundColor: "#f0f0f0",
-                                   marginRight: "0.5rem",
-                                 }}
-                               >
-                                 {classificationResult.mode.toUpperCase()}
-                               </span>
-                             </dd>
-                           </div>
-                           <div>
-                             <dt>Category</dt>
-                             <dd>{classificationResult.category}</dd>
-                           </div>
-                           <div>
-                             <dt>Suggested Priority</dt>
-                             <dd>{classificationResult.priority}</dd>
-                           </div>
-                           {classificationResult.confidence !== null && (
-                             <div>
-                               <dt>Confidence</dt>
-                               <dd>
-                                 {(classificationResult.confidence * 100).toFixed(
-                                   0,
-                                 )}
-                                 %
-                               </dd>
-                             </div>
-                           )}
-                         </>
-                       )}
+                      {classificationResult && (
+                        <>
+                          <div>
+                            <dt>AI Classification</dt>
+                            <dd>
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  fontSize: "0.75rem",
+                                  padding: "0.25rem 0.5rem",
+                                  borderRadius: "0.25rem",
+                                  backgroundColor: "#f0f0f0",
+                                  marginRight: "0.5rem",
+                                }}
+                              >
+                                {classificationResult.mode.toUpperCase()}
+                              </span>
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Category</dt>
+                            <dd>{classificationResult.category}</dd>
+                          </div>
+                          <div>
+                            <dt>Suggested Priority</dt>
+                            <dd>{classificationResult.priority}</dd>
+                          </div>
+                          {classificationResult.confidence !== null && (
+                            <div>
+                              <dt>Confidence</dt>
+                              <dd>
+                                {(
+                                  classificationResult.confidence * 100
+                                ).toFixed(0)}
+                                %
+                              </dd>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </dl>
                     {selectedOrder ? (
                       <div className="support-order-context">
@@ -389,14 +392,14 @@ export function SupportApp() {
                       </p>
                     ) : (
                       <div className="operations-actions">
-                         <button
-                           type="button"
-                           className="button button-outline"
-                           disabled={classifying}
-                           onClick={() => void classifySelectedCase()}
-                         >
-                           {classifying ? "Classifying..." : "Classify with Jev"}
-                         </button>
+                        <button
+                          type="button"
+                          className="button button-outline"
+                          disabled={classifying}
+                          onClick={() => void classifySelectedCase()}
+                        >
+                          {classifying ? "Classifying..." : "Classify with Jev"}
+                        </button>
                         {!assignedToMe && (
                           <button
                             type="button"

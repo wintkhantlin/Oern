@@ -248,15 +248,20 @@ export async function buildRoadMatrix(
     coverage: 0,
   };
   if (deps?.graph) {
-    const { buildShortestPathMatrix } = await import("../routing/matrix.ts");
-    const matrix = buildShortestPathMatrix(deps.graph, points, params);
+    const { buildShortestPathMatrixWithStats } = await import(
+      "../routing/matrix.ts"
+    );
+    const built = buildShortestPathMatrixWithStats(deps.graph, points, {
+      ...params,
+      maxSnapKm: 1.5,
+    });
     return {
-      matrix,
+      matrix: built.matrix,
       stats: {
         ...empty,
-        realPairs: n * (n - 1),
-        totalPairs: n * (n - 1),
-        coverage: 1,
+        realPairs: built.realPairs,
+        totalPairs: built.totalPairs,
+        coverage: built.totalPairs ? built.realPairs / built.totalPairs : 0,
       },
     };
   }
