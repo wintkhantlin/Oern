@@ -163,9 +163,9 @@ export function dropUnprofitable(
       dropped: number[];
       saving: number;
     } | null = null;
-    inst.trucks.forEach((truck, k) => {
+    for (const [k, truck] of inst.trucks.entries()) {
       const seq = state.routes[k];
-      if (seq.length === 0) return;
+      if (seq.length === 0) continue;
       const orders = [...new Set(seq.map((stop) => stop.r))];
       const candidates = orders.map((r) => ({
         dropped: [r],
@@ -180,9 +180,9 @@ export function dropUnprofitable(
         if (saving > 1e-9 && (best == null || saving > best.saving))
           best = { k, seq: c.seq, eval: result, dropped: c.dropped, saving };
       }
-    });
+    }
     if (!best) break;
-    const pick: NonNullable<typeof best> = best;
+    const pick = best;
     state.routes[pick.k] = pick.seq;
     state.evals[pick.k] = pick.eval;
     state.unassigned.push(...pick.dropped);
