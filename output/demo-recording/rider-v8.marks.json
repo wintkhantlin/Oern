@@ -1,0 +1,57 @@
+{
+  "video": "/Users/happer/Projects/oern/output/demo-recording/raw-rider-v8/b6c2e3098b87bda140459e40dde8a5ee.webm",
+  "marks": [
+    {
+      "label": "signin",
+      "t": 0.678
+    },
+    {
+      "label": "signed-in",
+      "t": 7.781
+    },
+    {
+      "label": "drive-stop",
+      "t": 16.996
+    },
+    {
+      "label": "arrive",
+      "t": 25.876
+    },
+    {
+      "label": "handover",
+      "t": 27.395
+    },
+    {
+      "label": "cash",
+      "t": 35.524
+    },
+    {
+      "label": "delivered",
+      "t": 36.484
+    },
+    {
+      "label": "drive-a",
+      "t": 42.569
+    },
+    {
+      "label": "fuel",
+      "t": 52.525
+    },
+    {
+      "label": "drive-fuel",
+      "t": 59.622
+    },
+    {
+      "label": "refuel-done",
+      "t": 70.936
+    },
+    {
+      "label": "drive-after",
+      "t": 73.437
+    },
+    {
+      "label": "end",
+      "t": 86.129
+    }
+  ]
+}

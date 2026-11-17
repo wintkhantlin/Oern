@@ -1,0 +1,49 @@
+{
+  "video": "/Users/happer/Projects/oern/output/demo-recording/raw-manager-v2/63cb94037433f9d9c84b19ac227cee3b.webm",
+  "marks": [
+    {
+      "label": "signin",
+      "t": 1.398
+    },
+    {
+      "label": "signed-in",
+      "t": 7.918
+    },
+    {
+      "label": "overview",
+      "t": 12.24
+    },
+    {
+      "label": "orders",
+      "t": 20.202
+    },
+    {
+      "label": "jobs",
+      "t": 33.365
+    },
+    {
+      "label": "tracking",
+      "t": 43.649
+    },
+    {
+      "label": "routelab",
+      "t": 54.19
+    },
+    {
+      "label": "vehicles",
+      "t": 67.933
+    },
+    {
+      "label": "cod",
+      "t": 74.275
+    },
+    {
+      "label": "flood",
+      "t": 82.549
+    },
+    {
+      "label": "end",
+      "t": 90.248
+    }
+  ]
+}

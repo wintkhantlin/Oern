@@ -1,0 +1,53 @@
+{
+  "video": "/Users/happer/Projects/oern/output/demo-recording/raw-customer-v3/47a345e765ec9a81668c18caf209b619.webm",
+  "marks": [
+    {
+      "label": "signin",
+      "t": 0.68
+    },
+    {
+      "label": "signed-in",
+      "t": 5.078
+    },
+    {
+      "label": "home",
+      "t": 8.415
+    },
+    {
+      "label": "pickup",
+      "t": 11.205
+    },
+    {
+      "label": "map",
+      "t": 16.094
+    },
+    {
+      "label": "delivery",
+      "t": 28.287
+    },
+    {
+      "label": "details",
+      "t": 39.03
+    },
+    {
+      "label": "fee",
+      "t": 45.578
+    },
+    {
+      "label": "review",
+      "t": 48.443
+    },
+    {
+      "label": "sent",
+      "t": 54.713
+    },
+    {
+      "label": "track",
+      "t": 60.073
+    },
+    {
+      "label": "end",
+      "t": 70.281
+    }
+  ]
+}

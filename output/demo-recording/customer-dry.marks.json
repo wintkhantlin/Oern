@@ -1,0 +1,45 @@
+{
+  "video": "/Users/happer/Projects/oern/output/demo-recording/raw-customer-dry/6915ec59fc0c765dda80bb352139e2ba.webm",
+  "marks": [
+    {
+      "label": "signin",
+      "t": 0.654
+    },
+    {
+      "label": "signed-in",
+      "t": 7.33
+    },
+    {
+      "label": "home",
+      "t": 11.127
+    },
+    {
+      "label": "pickup",
+      "t": 13.904
+    },
+    {
+      "label": "map",
+      "t": 19.016
+    },
+    {
+      "label": "delivery",
+      "t": 30.844
+    },
+    {
+      "label": "details",
+      "t": 41.557
+    },
+    {
+      "label": "fee",
+      "t": 48.11
+    },
+    {
+      "label": "review",
+      "t": 50.958
+    },
+    {
+      "label": "end",
+      "t": 52.905
+    }
+  ]
+}

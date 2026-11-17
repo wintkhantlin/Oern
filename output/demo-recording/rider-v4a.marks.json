@@ -1,0 +1,29 @@
+{
+  "video": "/Users/happer/Projects/oern/output/demo-recording/raw-rider-v4a/a56dae0694e9ac4844e7063855be0617.webm",
+  "marks": [
+    {
+      "label": "signin",
+      "t": 2.184
+    },
+    {
+      "label": "signed-in",
+      "t": 9.739
+    },
+    {
+      "label": "jobs",
+      "t": 15.658
+    },
+    {
+      "label": "swipe-take",
+      "t": 17.341
+    },
+    {
+      "label": "active",
+      "t": 21.049
+    },
+    {
+      "label": "end",
+      "t": 31.408
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+1
+00:00:00,000 --> 00:00:01,660
+Driver. Deliver parcels, collect payments,
+and find fuel stations.
+
+2
+00:00:01,700 --> 00:00:05,960
+Drivers see nearby jobs and accept one
+with a single swipe.
+
+3
+00:00:06,000 --> 00:00:10,227
+(Sped up 2×) The app guides the driver to
+each customer, turn by turn.
+
+4
+00:00:10,267 --> 00:00:21,549
+At the door, the app checks the parcel,
+records who received it, and saves a photo
+
+5
+00:00:21,589 --> 00:00:23,227
+as proof.
+
+6
+00:00:23,267 --> 00:00:28,227
+Cash on delivery is recorded in the app
+with one swipe.
+
+7
+00:00:28,267 --> 00:00:32,993
+(Sped up 2×) After each delivery, the app
+routes the driver to the next customer.
+
+8
+00:00:33,033 --> 00:00:34,170
+Low on fuel?
+
+9
+00:00:34,210 --> 00:00:37,993
+The app finds the nearest fuel station.
+
+10
+00:00:38,033 --> 00:00:45,327
+(Sped up 3×) The app guides the driver to
+the fuel station.
+
+11
+00:00:45,367 --> 00:00:47,827
+Tap Done after refuelling, and the app
+goes back to the delivery route.
+
+12
+00:00:47,867 --> 00:00:54,093
+(Sped up 2×) The route continues to the
+next customer.
+
+13
+00:00:53,633 --> 00:00:55,293
+Customer. Book a parcel pickup and track
+your parcel.
+
+14
+00:00:55,333 --> 00:00:59,293
+Customers use the app to send parcels and
+track them.
+
+15
+00:00:59,333 --> 00:01:07,793
+Choose the pickup location by moving the
+map.
+
+16
+00:01:07,833 --> 00:01:16,093
+Search the area, then add the street and
+house number for the delivery.
+
+17
+00:01:16,133 --> 00:01:22,593
+Add the receiver's details and choose a
+pickup time.
+
+18
+00:01:22,633 --> 00:01:25,379
+The app shows the price before booking.
+
+19
+00:01:25,419 --> 00:01:28,093
+Customers can pay in cash on delivery.
+
+20
+00:01:28,133 --> 00:01:31,093
+Once booked, the app gives the customer a
+tracking code.
+
+21
+00:01:31,133 --> 00:01:37,093
+Customers can pay the fee by scanning an
+MMQR code with their banking app.
+
+22
+00:01:37,133 --> 00:01:40,760
+The payment shows on the order right away,
+so the rider collects no cash.
+
+23
+00:01:40,300 --> 00:01:41,960
+Manager. Manage all deliveries from one
+place.
+
+24
+00:01:42,000 --> 00:01:47,960
+The manager dashboard shows today's
+deliveries at a glance.
+
+25
+00:01:48,000 --> 00:01:53,960
+All orders appear in one list, each with
+its delivery route on the map.
+
+26
+00:01:54,000 --> 00:02:01,960
+The app automatically groups new requests
+into jobs for drivers.
+
+27
+00:02:02,000 --> 00:02:08,460
+Live tracking shows every driver's
+location on the map.
+
+28
+00:02:08,500 --> 00:02:15,960
+Route planning builds the day's routes and
+updates them when orders are added.
+
+29
+00:02:16,000 --> 00:02:19,460
+The vehicles page shows which vehicles are
+ready for delivery.
+
+30
+00:02:19,500 --> 00:02:25,960
+The cash ledger shows how much each driver
+has collected.
+
+31
+00:02:25,500 --> 00:02:29,460
+Oern. Door-to-door delivery for Yangon.
+Try it at oern-app.vercel.app.
+

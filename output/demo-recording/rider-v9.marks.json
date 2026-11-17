@@ -1,0 +1,37 @@
+{
+  "video": "/Users/happer/Projects/oern/output/demo-recording/raw-rider-v9/a1af9786da1dfd4ccae7c6563fe574a5.webm",
+  "marks": [
+    {
+      "label": "signin",
+      "t": 0.895
+    },
+    {
+      "label": "signed-in",
+      "t": 6.655
+    },
+    {
+      "label": "onward",
+      "t": 13.471
+    },
+    {
+      "label": "fuel",
+      "t": 20.067
+    },
+    {
+      "label": "pitstop",
+      "t": 26.985
+    },
+    {
+      "label": "done",
+      "t": 46.031
+    },
+    {
+      "label": "continue",
+      "t": 48.432
+    },
+    {
+      "label": "end",
+      "t": 59.472
+    }
+  ]
+}

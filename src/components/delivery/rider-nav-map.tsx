@@ -27,7 +27,8 @@ export type RiderNavMapProps = {
   driver: MapPoint | null;
   /** Compass heading in degrees; the map turns to it while following. */
   heading: number | null;
-  target: (MapPoint & { kind: "pickup" | "dropoff" }) | null;
+  /** "fuel" is a refuelling pitstop the rider was sent to mid-route. */
+  target: (MapPoint & { kind: "pickup" | "dropoff" | "fuel" }) | null;
   stops: NavStop[];
   /** Points after the target, drawn lighter so the current leg stays the focus. */
   upcoming?: MapPoint[];

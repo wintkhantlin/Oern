@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   clearDraft,
@@ -19,14 +19,25 @@ import {
 export function usePickupDraft() {
   const [draft, setDraft] = useState<PickupDraft>(() => emptyDraft());
   const [hydrated, setHydrated] = useState(false);
+  // The draft just read from storage. Until it reaches state, the state on
+  // screen is older than storage: a page kept alive while the map screen ran
+  // shows again with its old draft, and saving that would erase the new pin.
+  const pending = useRef<PickupDraft | null>(null);
 
   useEffect(() => {
-    setDraft(loadDraft());
+    const stored = loadDraft();
+    pending.current = stored;
+    setDraft(stored);
     setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (hydrated) saveDraft(draft);
+    if (!hydrated) return;
+    if (pending.current) {
+      if (draft !== pending.current) return;
+      pending.current = null;
+    }
+    saveDraft(draft);
   }, [draft, hydrated]);
 
   const update = useCallback(

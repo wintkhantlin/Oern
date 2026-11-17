@@ -1,0 +1,17 @@
+{
+  "video": "/Users/happer/Projects/oern/output/demo-recording/raw-qr-probe/092c4638bd59adabed31419308a41fcd.webm",
+  "marks": [
+    {
+      "label": "signin",
+      "t": 1.037
+    },
+    {
+      "label": "signed-in",
+      "t": 7.874
+    },
+    {
+      "label": "end",
+      "t": 16.644
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "jobs": {
+    "text": "Drivers see nearby jobs and accept one with a single swipe."
+  },
+  "drive": {
+    "text": "The app guides the driver to each customer, turn by turn.",
+    "fast": "Sped up 2×"
+  },
+  "door": {
+    "text": "At the door, the app checks the parcel, records who received it, and saves a photo as proof."
+  },
+  "cash": {
+    "text": "Cash on delivery is recorded in the app with one swipe."
+  },
+  "onward": {
+    "text": "After each delivery, the app routes the driver to the next customer.",
+    "fast": "Sped up 2×"
+  },
+  "fuel": {
+    "text": "Low on fuel? The app finds the nearest fuel station."
+  },
+  "pitstop": {
+    "text": "The app guides the driver to the fuel station.",
+    "fast": "Sped up 3×"
+  },
+  "done": {
+    "text": "Tap Done after refuelling, and the app goes back to the delivery route."
+  },
+  "next": {
+    "text": "The route continues to the next customer.",
+    "fast": "Sped up 2×"
+  },
+  "c-home": {
+    "text": "Customers use the app to send parcels and track them."
+  },
+  "c-map": {
+    "text": "Choose the pickup location by moving the map."
+  },
+  "c-drop": {
+    "text": "Search the area, then add the street and house number for the delivery."
+  },
+  "c-who": {
+    "text": "Add the receiver's details and choose a pickup time."
+  },
+  "c-fee": {
+    "text": "The app shows the price before booking. Customers can pay in cash on delivery."
+  },
+  "c-sent": {
+    "text": "Once booked, the app gives the customer a tracking code."
+  },
+  "c-track": {
+    "text": "The payment shows on the order right away, so the rider collects no cash."
+  },
+  "m-over": {
+    "text": "The manager dashboard shows today's deliveries at a glance."
+  },
+  "m-orders": {
+    "text": "All orders appear in one list, each with its delivery route on the map."
+  },
+  "m-jobs": {
+    "text": "The app automatically groups new requests into jobs for drivers.",
+    "pos": "top"
+  },
+  "m-track": {
+    "text": "Live tracking shows every driver's location on the map."
+  },
+  "m-lab": {
+    "text": "Route planning builds the day's routes and updates them when orders are added."
+  },
+  "m-fleet": {
+    "text": "The vehicles page shows which vehicles are ready for delivery."
+  },
+  "m-cod": {
+    "text": "The cash ledger shows how much each driver has collected."
+  },
+  "c-pay": {
+    "text": "Customers can pay the fee by scanning an MMQR code with their banking app."
+  }
+}

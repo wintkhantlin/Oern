@@ -224,8 +224,9 @@ export function RiderActiveScreen({
               currentTargetPoint
                 ? {
                     ...currentTargetPoint,
-                    kind:
-                      activePitStop || stop.kind === "pickup"
+                    kind: activePitStop
+                      ? "fuel"
+                      : stop.kind === "pickup"
                         ? "pickup"
                         : "dropoff",
                   }

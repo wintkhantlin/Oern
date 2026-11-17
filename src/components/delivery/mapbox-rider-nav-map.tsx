@@ -57,11 +57,16 @@ function originMarker() {
   return svgMarker(`<circle class="rnav-origin" r="7"/>`, 16, "-8 -8 16 16");
 }
 
-function targetMarker(kind: "pickup" | "dropoff") {
+/** Fuel pump drawn in the pin head (the shared 24px "fuel" icon, scaled to fit). */
+const FUEL_GLYPH = `<path class="rnav-target-glyph" transform="translate(-6.9 -30.2) scale(0.58)" d="M4 20V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v15M3 20h11M4 10h9m0 1h2a1 1 0 0 1 1 1v4a1.5 1.5 0 0 0 3 0V9l-2.5-2.5"/>`;
+
+function targetMarker(kind: "pickup" | "dropoff" | "fuel") {
   const glyph =
-    kind === "pickup"
-      ? `<path class="rnav-target-glyph" d="M-5.5-27h11v8.5h-11zM-5.5-27l2-3h7l2 3"/>`
-      : `<circle class="rnav-target-dot" cy="-23" r="4.2"/>`;
+    kind === "fuel"
+      ? FUEL_GLYPH
+      : kind === "pickup"
+        ? `<path class="rnav-target-glyph" d="M-5.5-27h11v8.5h-11zM-5.5-27l2-3h7l2 3"/>`
+        : `<circle class="rnav-target-dot" cy="-23" r="4.2"/>`;
   return svgMarker(
     `<g class="rnav-target rnav-target-${kind}"><path class="rnav-target-pin" d="M0 0c-2.6-6.4-13-12.6-13-23a13 13 0 0 1 26 0C13-12.6 2.6-6.4 0 0Z"/>${glyph}</g>`,
     32,

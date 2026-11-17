@@ -1,24 +1,40 @@
 "use client";
 
-import ArrowBack from "@mui/icons-material/ArrowBack";
+import CheckRounded from "@mui/icons-material/CheckRounded";
+import ErrorOutlineRounded from "@mui/icons-material/ErrorOutlineRounded";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
-import IconButton from "@mui/material/IconButton";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+
+import { CustomerHeader } from "@/components/delivery/customer-home";
 import { PaymentLogo } from "@/components/delivery/payment-logos";
+import { sandboxPayOrder } from "@/lib/delivery/actions";
 import { currency } from "@/lib/delivery/format";
 import {
   downloadQRCode,
   generateMMQRQRCode,
   type MMQRQRCode,
 } from "@/lib/delivery/mmqr-sdk";
-import { sandboxPayOrder } from "@/lib/delivery/actions";
 import { createClient } from "@/lib/supabase/client";
+
+/** Apps that scan an MMQR code. */
+const MMQR_APPS = "KBZPay, Wave Pay, AYA Pay, CB Pay or CTZPay";
+/** How long the code stays valid. */
+const VALID_SECONDS = 15 * 60;
+/** Sandbox: how long the QR stays up before the simulated confirmation. */
+const SANDBOX_CONFIRM_MS = 4000;
+
+/** Full-height column so the one action can sit at the bottom. */
+const SHELL = {
+  minHeight: "100dvh",
+  display: "flex",
+  flexDirection: "column",
+} as const;
+
+type Status = "loading" | "ready" | "paid" | "failed";
 
 export default function TrackQrPage() {
   const params = useSearchParams();
@@ -26,225 +42,252 @@ export default function TrackQrPage() {
   const code = params.get("code") ?? "";
   const amount = Number(params.get("amount") ?? 0);
   const [qr, setQr] = useState<MMQRQRCode | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [remaining, setRemaining] = useState(15 * 60);
-  const [success, setSuccess] = useState(false);
-  const [qrLoading, setQrLoading] = useState(true);
+  const [status, setStatus] = useState<Status>("loading");
+  const [remaining, setRemaining] = useState(VALID_SECONDS);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const result = await generateMMQRQRCode({
-          merchantId: "oern-merchant",
-          amount,
-          reference: code,
-          merchantName: "Oern",
-        });
-        if (!cancelled) {
-          setQr(result);
-          // Simulate QR loading time
-          setTimeout(() => {
-            if (!cancelled) setQrLoading(false);
-          }, 2000);
-        }
-      } catch {
-        if (!cancelled) setError("Could not generate the QR code.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+    generateMMQRQRCode({
+      merchantId: "oern-merchant",
+      amount,
+      reference: code,
+      merchantName: "Oern",
+    })
+      .then((result) => {
+        if (cancelled) return;
+        setQr(result);
+        setStatus("ready");
+      })
+      .catch(() => !cancelled && setStatus("failed"));
     return () => {
       cancelled = true;
     };
   }, [amount, code]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setRemaining((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+    if (status !== "ready") return;
+    const timer = window.setInterval(
+      () => setRemaining((left) => Math.max(0, left - 1)),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, [status]);
 
-  // Wait 2s after QR finishes loading, then set as paid and redirect
+  // Sandbox: no provider sends a confirmation, so settle the order after the
+  // code has been on screen for a moment.
   useEffect(() => {
-    if (!qrLoading && qr) {
-      const t = setTimeout(async () => {
-        try {
-          // Mark payment as paid in sandbox
-          const supabase = createClient();
-          await sandboxPayOrder(supabase, code, "mmqr");
-        } catch (err) {
-          console.error("Failed to mark order as paid:", err);
-        }
-        
-        setSuccess(true);
-        // Redirect back after confirmation
-        setTimeout(() => {
-          router.back();
-        }, 1500);
-      }, 2000);
-      return () => clearTimeout(t);
-    }
-  }, [qrLoading, qr, router, code]);
+    if (status !== "ready") return;
+    const timer = window.setTimeout(async () => {
+      try {
+        await sandboxPayOrder(createClient(), code, "mmqr");
+        setStatus("paid");
+      } catch (cause) {
+        console.error("MMQR payment was not confirmed:", cause);
+        setStatus("failed");
+      }
+    }, SANDBOX_CONFIRM_MS);
+    return () => window.clearTimeout(timer);
+  }, [status, code]);
 
-  const minutes = Math.floor(remaining / 60);
-  const seconds = remaining % 60;
-  const timeDisplay = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  const total = currency.format(amount);
+  const clock = `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`;
+  const back = () => router.back();
 
-  if (success) {
+  if (status === "paid" || status === "failed") {
+    const paid = status === "paid";
     return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          backgroundColor: "#f8fafc",
-          px: 2,
-          py: 4,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 2,
-        }}
-      >
+      <Box component="main" className="customer-app" sx={SHELL}>
+        <CustomerHeader
+          title={paid ? "Payment received" : "Payment not confirmed"}
+          isAuthenticated={false}
+          unreadCount={0}
+          showBell={false}
+          onBack={back}
+        />
         <Box
+          role="status"
           sx={{
-            width: "100%",
-            maxWidth: 360,
+            flex: 1,
+            px: 2,
             display: "flex",
-            justifyContent: "flex-end",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            gap: 1,
           }}
         >
-          <IconButton onClick={() => router.back()} aria-label="Back">
-            <ArrowBack />
-          </IconButton>
+          <Box
+            sx={{
+              width: 64,
+              height: 64,
+              mb: 1,
+              borderRadius: "50%",
+              display: "grid",
+              placeItems: "center",
+              bgcolor: paid ? "#dcfce7" : "#fee2e2",
+              color: paid ? "#166534" : "#b91c1c",
+            }}
+          >
+            {paid ? (
+              <CheckRounded sx={{ fontSize: 34 }} />
+            ) : (
+              <ErrorOutlineRounded sx={{ fontSize: 34 }} />
+            )}
+          </Box>
+          <Typography
+            sx={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.03em" }}
+          >
+            {total}
+          </Typography>
+          <Typography sx={{ color: "text.secondary" }}>
+            {paid
+              ? `Paid for ${code}. The rider collects no cash.`
+              : "We could not confirm this payment. Nothing was charged."}
+          </Typography>
         </Box>
-        <Typography
-          variant="h6"
-          sx={{ fontWeight: 750, color: "success.dark" }}
-        >
-          Payment successful
-        </Typography>
-        <Typography variant="body2" sx={{ color: "text.secondary" }}>
-          {currency.format(amount)} received · {code}
-        </Typography>
+        <BottomAction>
+          <Button
+            variant="contained"
+            size="large"
+            fullWidth
+            onClick={back}
+            sx={{ minHeight: 56 }}
+          >
+            Back to order
+          </Button>
+        </BottomAction>
       </Box>
     );
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        backgroundColor: "#f8fafc",
-        px: 2,
-        py: 4,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 3,
-      }}
-    >
+    <Box component="main" className="customer-app" sx={SHELL}>
+      <CustomerHeader
+        title="Pay with MMQR"
+        subtitle={code}
+        isAuthenticated={false}
+        unreadCount={0}
+        showBell={false}
+        onBack={back}
+      />
       <Box
         sx={{
-          width: "100%",
-          maxWidth: 360,
-          display: "flex",
-          justifyContent: "flex-end",
+          flex: 1,
+          px: 2,
+          pt: 1,
+          display: "grid",
+          gap: 2.5,
+          alignContent: "start",
         }}
       >
-        <IconButton onClick={() => router.back()} aria-label="Back">
-          <ArrowBack />
-        </IconButton>
-      </Box>
-
-      {/* MMQR Logo - centered above title */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          mb: 2,
-        }}
-      >
-        <PaymentLogo method="mmqr" size={64} />
-      </Box>
-
-      <Typography variant="h6" sx={{ fontWeight: 750 }}>
-        Scan to pay {currency.format(amount)}
-      </Typography>
-      <Typography
-        variant="body2"
-        sx={{ color: "text.secondary", textAlign: "center" }}
-      >
-        Reference: {code}
-      </Typography>
-
-      <Typography
-        variant="h4"
-        sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}
-      >
-        {timeDisplay}
-      </Typography>
-
-      {loading && <CircularProgress />}
-
-      {error && (
-        <Typography role="alert" color="error">
-          {error}
-        </Typography>
-      )}
-
-      {qr && qrLoading && (
-        <Stack
-          spacing={2}
-          sx={{ alignItems: "center", width: "100%", maxWidth: 360 }}
-        >
-          <CircularProgress size={64} sx={{ color: "#2563eb" }} />
-          <Typography
-            variant="body2"
-            sx={{ color: "text.secondary", textAlign: "center" }}
-          >
-            Loading QR code...
+        <Box>
+          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            Amount to pay
           </Typography>
-        </Stack>
-      )}
+          <Typography
+            sx={{
+              fontSize: 30,
+              lineHeight: "36px",
+              fontWeight: 700,
+              letterSpacing: "-0.03em",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {total}
+          </Typography>
+        </Box>
 
-      {qr && !qrLoading && (
-        <Stack
-          spacing={2}
-          sx={{ alignItems: "center", width: "100%", maxWidth: 360 }}
+        <Box
+          sx={{
+            bgcolor: "background.paper",
+            border: "1px solid #e2e8f0",
+            borderRadius: "16px",
+            p: 2.5,
+            display: "grid",
+            justifyItems: "center",
+            gap: 2,
+          }}
         >
           <Box
             sx={{
-              backgroundColor: "#ffffff",
-              p: 2,
-              borderRadius: "12px",
-              border: "1px solid #e2e8f0",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              alignSelf: "start",
+              justifySelf: "start",
             }}
           >
-            <Image
-              src={qr.dataUrl}
-              alt="MMQR code"
-              width={280}
-              height={280}
-              style={{ width: "100%", height: "auto", display: "block" }}
-            />
+            <PaymentLogo method="mmqr" size={28} />
+            <Typography sx={{ fontWeight: 700 }}>Oern</Typography>
           </Box>
-        </Stack>
-      )}
+          <Box
+            aria-busy={status === "loading"}
+            sx={{
+              width: 240,
+              height: 240,
+              borderRadius: "12px",
+              bgcolor: qr ? "transparent" : "#f1f5f9",
+            }}
+          >
+            {qr && (
+              <Image
+                src={qr.dataUrl}
+                alt={`MMQR code to pay ${total}`}
+                width={240}
+                height={240}
+                unoptimized
+                style={{ display: "block", width: 240, height: 240 }}
+              />
+            )}
+          </Box>
+          <Typography
+            variant="body2"
+            sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}
+          >
+            {qr ? `Expires in ${clock}` : "Preparing your code…"}
+          </Typography>
+        </Box>
 
-      {qr && !qrLoading && (
+        <Typography
+          variant="body2"
+          sx={{ color: "text.secondary", textAlign: "center", px: 1 }}
+        >
+          Open {MMQR_APPS} and scan this code. This screen updates once the
+          payment arrives.
+        </Typography>
+      </Box>
+      <BottomAction>
         <Button
-          variant="contained"
+          variant="outlined"
+          color="secondary"
+          size="large"
           fullWidth
-          onClick={() => downloadQRCode(qr, `mmqr-${code}.png`)}
-          sx={{ textTransform: "none", maxWidth: 360 }}
+          disabled={!qr}
+          onClick={() => qr && downloadQRCode(qr, `mmqr-${code}.png`)}
+          sx={{ minHeight: 56 }}
         >
           Save QR
         </Button>
-      )}
+      </BottomAction>
+    </Box>
+  );
+}
+
+/** The one action, anchored where the thumb is. */
+function BottomAction({ children }: { children: React.ReactNode }) {
+  return (
+    <Box
+      sx={{
+        position: "sticky",
+        bottom: 0,
+        px: 2,
+        pt: 1.5,
+        pb: "calc(env(safe-area-inset-bottom) + 16px)",
+        bgcolor: "background.default",
+      }}
+    >
+      {children}
     </Box>
   );
 }

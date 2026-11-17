@@ -427,11 +427,19 @@ function AddressesStep({
     patch(side, text, pin);
     setPinText((current) => ({ ...current, [side]: pin ? text : null }));
   };
-  /** True when the address has been edited since its pin was placed. */
-  const pinStale = (side: Side) =>
-    Boolean(point(side)) &&
-    pinText[side] !== null &&
-    pinText[side] !== address(side).trim();
+  /**
+   * True when the address has been edited since its pin was placed. Adding a
+   * house number or street around the picked place keeps the same spot, so
+   * text that still contains the picked label is not stale.
+   */
+  const pinStale = (side: Side) => {
+    const picked = pinText[side];
+    return (
+      Boolean(point(side)) &&
+      picked !== null &&
+      !address(side).toLowerCase().includes(picked.toLowerCase())
+    );
+  };
   const setGpsFor = (side: Side, state: GpsState) =>
     setGps((current) => ({ ...current, [side]: state }));
 

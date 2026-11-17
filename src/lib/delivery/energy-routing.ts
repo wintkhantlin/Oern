@@ -100,8 +100,9 @@ export const YANGON_FUEL_STATIONS: readonly FuelStation[] = [
     brand: "Max Energy",
     township: "Kamayut",
     road: "Pyay Road & Hanthawaddy Rd",
-    latitude: 16.816,
-    longitude: 96.132,
+    // Same station as Google Places "Max Energy (Kyuntaw)"; the old pin sat ~230 m off the road.
+    latitude: 16.8148,
+    longitude: 96.1302,
   },
   {
     name: "BOC Kamayut",
@@ -496,7 +497,7 @@ export function findOptimalFuelStation(
 }
 
 /**
- * Merged fuel station dataset: curated corridor stations plus all 64 crawled
+ * Merged fuel station dataset: curated corridor stations plus the 62 crawled
  * Google Places stations across Yangon, deduplicated by geographic proximity.
  */
 export const ALL_YANGON_FUEL_STATIONS: readonly FuelStation[] = [

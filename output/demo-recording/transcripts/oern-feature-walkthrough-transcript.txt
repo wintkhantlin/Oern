@@ -1,0 +1,69 @@
+Oern Feature Walkthrough (2:29)
+
+DRIVER
+
+[0:00.0] Driver. Deliver parcels, collect payments, and find fuel stations.
+
+[0:01.7] Drivers see nearby jobs and accept one with a single swipe.
+
+[0:06.0] (Sped up 2×) The app guides the driver to each customer, turn by turn.
+
+[0:10.3] At the door, the app checks the parcel, records who received it, and saves a photo as proof.
+
+[0:23.3] Cash on delivery is recorded in the app with one swipe.
+
+[0:28.3] (Sped up 2×) After each delivery, the app routes the driver to the next customer.
+
+[0:33.0] Low on fuel? The app finds the nearest fuel station.
+
+[0:38.0] (Sped up 3×) The app guides the driver to the fuel station.
+
+[0:45.4] Tap Done after refuelling, and the app goes back to the delivery route.
+
+[0:47.9] (Sped up 2×) The route continues to the next customer.
+
+
+CUSTOMER
+
+[0:53.6] Customer. Book a parcel pickup and track your parcel.
+
+[0:55.3] Customers use the app to send parcels and track them.
+
+[0:59.3] Choose the pickup location by moving the map.
+
+[1:07.8] Search the area, then add the street and house number for the delivery.
+
+[1:16.1] Add the receiver's details and choose a pickup time.
+
+[1:22.6] The app shows the price before booking. Customers can pay in cash on delivery.
+
+[1:28.1] Once booked, the app gives the customer a tracking code.
+
+[1:31.1] Customers can pay the fee by scanning an MMQR code with their banking app.
+
+[1:37.1] The payment shows on the order right away, so the rider collects no cash.
+
+
+MANAGER
+
+[1:40.3] Manager. Manage all deliveries from one place.
+
+[1:42.0] The manager dashboard shows today's deliveries at a glance.
+
+[1:48.0] All orders appear in one list, each with its delivery route on the map.
+
+[1:54.0] The app automatically groups new requests into jobs for drivers.
+
+[2:02.0] Live tracking shows every driver's location on the map.
+
+[2:08.5] Route planning builds the day's routes and updates them when orders are added.
+
+[2:16.0] The vehicles page shows which vehicles are ready for delivery.
+
+[2:19.5] The cash ledger shows how much each driver has collected.
+
+
+END
+
+[2:25.5] Oern. Door-to-door delivery for Yangon. Try it at oern-app.vercel.app.
+

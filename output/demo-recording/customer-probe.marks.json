@@ -1,0 +1,17 @@
+{
+  "video": "/Users/happer/Projects/oern/output/demo-recording/raw-customer-probe/29d53ff33ba238959f1a45280817e676.webm",
+  "marks": [
+    {
+      "label": "signin",
+      "t": 0.714
+    },
+    {
+      "label": "signed-in",
+      "t": 5.923
+    },
+    {
+      "label": "end",
+      "t": 21.824
+    }
+  ]
+}

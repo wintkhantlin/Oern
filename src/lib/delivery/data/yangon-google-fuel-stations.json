@@ -24,18 +24,6 @@
     "rating": 3.7
   },
   {
-    "id": "gplace_3",
-    "name": "VEERA Wellness and Reflexology",
-    "brand": "Retail Fuel",
-    "township": "Yangon",
-    "road": "No 17/A 3 BPyi Htaung Su Main Road",
-    "address": "No 17/A 3 BPyi Htaung Su Main Road Yangon, Myanmar (Burma)",
-    "latitude": 16.8195623,
-    "longitude": 96.1613422,
-    "phone": null,
-    "rating": 5
-  },
-  {
     "id": "gplace_4",
     "name": "'2000",
     "brand": "Retail Fuel",
@@ -82,18 +70,6 @@
     "longitude": 96.1440578,
     "phone": "+95 9 940 549231",
     "rating": 3.9
-  },
-  {
-    "id": "gplace_8",
-    "name": "City Coffee",
-    "brand": "Retail Fuel",
-    "township": "Yangon",
-    "road": "R56F+P4G, 164th Street",
-    "address": "R56F+P4G, 164th Street, Yangon, Myanmar (Burma)",
-    "latitude": 16.811941,
-    "longitude": 96.1726494,
-    "phone": null,
-    "rating": null
   },
   {
     "id": "gplace_9",

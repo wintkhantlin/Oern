@@ -679,6 +679,16 @@
   fill: #ffffff;
 }
 
+/* Refuelling pitstop: red pin with a white pump, so it never reads as a delivery stop. */
+.rnav-target-fuel .rnav-target-pin {
+  fill: var(--color-error);
+}
+
+.rnav-target-fuel .rnav-target-glyph {
+  stroke-width: 3.4;
+  stroke-linecap: round;
+}
+
 .rnav-target-glyph {
   fill: none;
   stroke: #ffffff;
